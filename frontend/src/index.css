@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@import "tailwindcss";
+
+:root {
+  --app-primary: #7e5cf5;
+  --app-secondary: #8b5cf6;
+  --app-bg-hex: #19122a;
+}
+
+@theme {
+  --color-brand-bg: var(--app-bg-hex);
+  --color-brand-card: rgba(255, 255, 255, 0.03);
+  --color-brand-border: rgba(255, 255, 255, 0.08);
+  --color-brand-primary: var(--app-primary);
+  --color-brand-secondary: var(--app-secondary);
+  
+  --font-sans: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-bg text-white antialiased overflow-hidden;
+    font-family: 'Inter', sans-serif;
+    background: var(--app-bg-hex);
+    min-height: 100vh;
+  }
+}
+
+.glow-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.glow-orb-1 {
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  width: 70vw;
+  height: 70vw;
+  background: radial-gradient(circle, var(--app-primary) 0%, transparent 60%);
+  opacity: 0.15;
+  filter: blur(100px);
+}
+
+.glow-orb-2 {
+  position: absolute;
+  bottom: -20%;
+  right: -10%;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, var(--app-secondary) 0%, transparent 60%);
+  opacity: 0.1;
+  filter: blur(100px);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1); 
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2); 
+}
