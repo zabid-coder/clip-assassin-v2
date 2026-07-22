@@ -274,34 +274,7 @@ export default function App() {
   return (
     <div className="flex h-screen bg-brand-bg font-sans overflow-hidden text-slate-200">
       
-      {/* Disconnect Overlay (hidden on master_ingest, settings, manual tabs) */}
-      {!status.connected && activeTab !== 'master_ingest' && activeTab !== 'manual' && activeTab !== 'settings' && (
-        <div className="fixed inset-0 z-[500] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-500">
-          <div className="bg-brand-card border border-rose-500/30 p-8 rounded-3xl shadow-2xl shadow-rose-900/20 max-w-md text-center flex flex-col items-center">
-            <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-rose-500/30 shadow-[0_0_30px_rgba(244,63,94,0.3)]">
-              <Link size={32} className="opacity-50" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-3">DaVinci Resolve Disconnected</h2>
-            <p className="text-white/60 text-sm mb-6 leading-relaxed">
-              Clip Assassin requires DaVinci Resolve to be running with Scripting API enabled for timeline editing. 
-              Alternatively, use <strong>Master Ingest</strong> to launch Resolve automatically.
-            </p>
-            <div className="flex flex-col gap-3 w-full">
-              <ActionButton 
-                text="Retry Connection" 
-                onClick={handleConnect} 
-                category="magic" variant="primary"
-              />
-              <button 
-                onClick={() => setActiveTab('master_ingest')}
-                className="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 text-xs font-semibold transition-all border border-white/10"
-              >
-                Go to Master Ingest (Auto-Launch Resolve)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Sidebar */}
       {/* Background Glows */}

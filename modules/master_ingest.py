@@ -100,6 +100,19 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
         return False, f"Failed to create/open project: '{target_project_name}'"
     
     core.project = project
+    
+    # Set Working Folders (Project media location, CacheClip, Gallery) to Master Folder
+    try:
+        project.SetSetting("projectMediaLocation", master_folder_path)
+        cache_dir = os.path.join(master_folder_path, "CacheClip")
+        gallery_dir = os.path.join(master_folder_path, ".gallery")
+        os.makedirs(cache_dir, exist_ok=True)
+        os.makedirs(gallery_dir, exist_ok=True)
+        project.SetSetting("perfCacheClipsLocation", cache_dir)
+        project.SetSetting("colorGalleryStillsLocation", gallery_dir)
+    except Exception as e:
+        print(f"Notice on Working Folders setting: {e}")
+
     core.media_pool = project.GetMediaPool()
     media_pool = core.media_pool
     if not media_pool:
