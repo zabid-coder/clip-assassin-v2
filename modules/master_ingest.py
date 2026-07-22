@@ -9,6 +9,13 @@ SUPPORTED_EXTENSIONS = {
     ".png", ".jpg", ".jpeg", ".tiff"
 }
 
+IGNORED_FOLDERS = {
+    "davinci resolve database", "davinci database", "database",
+    "after effects", "fcpx", "illustrator", "photoshop", "premiere",
+    "export", "exports", "production documents", "documents",
+    ".ds_store", "__macosx", ".git", ".idea"
+}
+
 def get_versioned_project_name(base_name: str, existing_projects: list[str]) -> str:
     has_match = any(p == base_name or p.startswith(f"{base_name}_v") for p in existing_projects)
     if not has_match:
@@ -24,25 +31,46 @@ def ensure_resolve_running(core) -> tuple[bool, str]:
     if success:
         return True, "Connected to DaVinci Resolve."
     
-    # Attempt OS launch
+    # Attempt direct binary launch to bypass OS sandbox permission errors
     try:
         if sys.platform == "darwin":
-            subprocess.Popen(["open", "-a", "DaVinci Resolve"])
+            mac_paths = [
+                "/Applications/DaVinci Resolve/DaVinci Resolve.app/Contents/MacOS/Resolve",
+                "/Applications/DaVinci Resolve Studio/DaVinci Resolve Studio.app/Contents/MacOS/Resolve"
+            ]
+            launched = False
+            for p in mac_paths:
+                if os.path.exists(p):
+                    subprocess.Popen([p], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    launched = True
+                    break
+            if not launched:
+                subprocess.Popen(["open", "-a", "DaVinci Resolve"])
         elif sys.platform == "win32":
-            os.system('start "" "DaVinci Resolve"')
+            win_paths = [
+                r"C:\Program Files\Blackmagic Design\DaVinci Resolve\Resolve.exe"
+            ]
+            launched = False
+            for p in win_paths:
+                if os.path.exists(p):
+                    subprocess.Popen([p])
+                    launched = True
+                    break
+            if not launched:
+                os.system('start "" "DaVinci Resolve"')
         else:
             subprocess.Popen(["resolve"])
     except Exception as e:
         return False, f"Failed to launch Resolve: {str(e)}"
     
-    # Poll for connection up to 25s
-    for _ in range(25):
+    # Poll for connection up to 35s
+    for _ in range(35):
         time.sleep(1)
         success, msg = core.connect()
         if success:
             return True, "Resolve started and connected successfully."
             
-    return False, "Timed out waiting for DaVinci Resolve to start."
+    return False, "Timed out waiting for DaVinci Resolve to start. Please open DaVinci Resolve manually."
 
 def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
     if not master_folder_path or not os.path.isdir(master_folder_path):
@@ -75,31 +103,48 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
     root_folder = media_pool.GetRootFolder()
     created_timelines = []
     
-    try:
-        subfolders = [f for f in os.listdir(master_folder_path) if os.path.isdir(os.path.join(master_folder_path, f))]
-    except Exception as e:
-        return False, f"Error reading master folder: {str(e)}"
-    
-    if not subfolders:
-        # If no subfolders, use the master folder itself
-        subfolders = ["Footage"]
-        master_has_subfolders = False
-    else:
-        master_has_subfolders = True
-
-    for sub in sorted(subfolders):
-        if master_has_subfolders:
-            sub_path = os.path.join(master_folder_path, sub)
-        else:
-            sub_path = master_folder_path
+    # Check if there is a 'Raw Footages' or 'Footage' folder
+    raw_footages_dir = None
+    all_subitems = os.listdir(master_folder_path)
+    for item in all_subitems:
+        full_p = os.path.join(master_folder_path, item)
+        if os.path.isdir(full_p) and item.lower() in ["raw footages", "raw footage", "footage", "raw"]:
+            raw_footages_dir = full_p
+            break
             
-        sub_bin = media_pool.AddSubFolder(root_folder, sub)
+    # List of card/footage folders to process: (bin_name, folder_path)
+    folders_to_process = []
+    
+    if raw_footages_dir:
+        # Process cards inside Raw Footages
+        card_dirs = [f for f in os.listdir(raw_footages_dir) if os.path.isdir(os.path.join(raw_footages_dir, f))]
+        for card in sorted(card_dirs):
+            if card.lower() not in IGNORED_FOLDERS:
+                folders_to_process.append((card, os.path.join(raw_footages_dir, card)))
+    else:
+        # Process direct subfolders of Master Folder, ignoring non-media folders
+        for item in sorted(all_subitems):
+            full_p = os.path.join(master_folder_path, item)
+            if os.path.isdir(full_p) and item.lower() not in IGNORED_FOLDERS:
+                folders_to_process.append((item, full_p))
+                
+    # Also check if BG Music or Audio folder exists to import as Bin
+    bg_music_dir = None
+    for item in all_subitems:
+        full_p = os.path.join(master_folder_path, item)
+        if os.path.isdir(full_p) and item.lower() in ["bg music", "audio", "music", "sound"]:
+            bg_music_dir = (item, full_p)
+            break
+
+    # Process Card / Footage Folders -> Bins + Timelines
+    for bin_name, folder_path in folders_to_process:
+        sub_bin = media_pool.AddSubFolder(root_folder, bin_name)
         if sub_bin:
             media_pool.SetCurrentFolder(sub_bin)
         
-        # Collect supported media files
+        # Recursively collect all supported media files inside card folder (ignoring 'private' name for timeline!)
         media_files = []
-        for r, d, files in os.walk(sub_path):
+        for r, d, files in os.walk(folder_path):
             for file in files:
                 ext = os.path.splitext(file)[1].lower()
                 if ext in SUPPORTED_EXTENSIONS:
@@ -108,9 +153,24 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
         if media_files:
             imported_items = media_pool.ImportMedia(media_files)
             if imported_items:
-                tl_name = f"{sub} Timeline"
+                tl_name = f"{bin_name} Timeline"
                 tl = media_pool.CreateTimelineFromClips(tl_name, imported_items)
                 if tl:
                     created_timelines.append(tl_name)
+                    
+    # Process BG Music if found -> Bin only
+    if bg_music_dir:
+        b_name, b_path = bg_music_dir
+        music_bin = media_pool.AddSubFolder(root_folder, b_name)
+        if music_bin:
+            media_pool.SetCurrentFolder(music_bin)
+            m_files = []
+            for r, d, files in os.walk(b_path):
+                for file in files:
+                    ext = os.path.splitext(file)[1].lower()
+                    if ext in SUPPORTED_EXTENSIONS:
+                        m_files.append(os.path.join(r, file))
+            if m_files:
+                media_pool.ImportMedia(m_files)
     
-    return True, f"✓ Created project '{target_project_name}' with {len(created_timelines)} timelines ({', '.join(created_timelines)})"
+    return True, f"✓ Successfully created project '{target_project_name}' with {len(created_timelines)} Card Timelines: {', '.join(created_timelines)}"
