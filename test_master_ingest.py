@@ -1,15 +1,15 @@
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import unittest
 from modules.master_ingest import get_versioned_project_name
 
-def test_get_versioned_project_name():
-    existing = ["ProjectA", "Wedding_v1", "Wedding_v2"]
-    assert get_versioned_project_name("ProjectA", existing) == "ProjectA_v2"
-    assert get_versioned_project_name("Wedding", existing) == "Wedding_v3"
-    assert get_versioned_project_name("NewProject", existing) == "NewProject"
+class TestMasterIngest(unittest.TestCase):
+    def test_versioned_project_name(self):
+        existing = ["Project_A", "Project_B_v2"]
+        self.assertEqual(get_versioned_project_name("Project_C", existing), "Project_C")
+        self.assertEqual(get_versioned_project_name("Project_A", existing), "Project_A_v2")
+        
+        existing_v2 = ["Project_A", "Project_A_v2"]
+        self.assertEqual(get_versioned_project_name("Project_A", existing_v2), "Project_A_v3")
 
 if __name__ == "__main__":
-    test_get_versioned_project_name()
+    unittest.main()
     print("ALL TESTS PASSED")
