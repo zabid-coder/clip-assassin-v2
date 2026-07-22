@@ -63,7 +63,7 @@ def ensure_resolve_running(core) -> tuple[bool, str]:
         if success:
             return True, "Resolve started and connected successfully."
             
-    return False, "Timed out waiting for DaVinci Resolve to start. Please open DaVinci Resolve on your Mac and try again."
+    return False, "Could not connect to DaVinci Resolve. Please ensure DaVinci Resolve is open and check Preferences -> System -> General -> External scripting is set to 'Local'."
 
 def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
     if not master_folder_path or not os.path.isdir(master_folder_path):

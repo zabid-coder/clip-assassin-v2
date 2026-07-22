@@ -17,6 +17,21 @@ for path in resolve_api_paths:
     if os.path.exists(path) and path not in sys.path:
         sys.path.append(path)
 
+# Set environment variables for Resolve Scripting API
+if sys.platform == "darwin":
+    os.environ["RESOLVE_SCRIPT_API"] = "/Library/Application Support/Blackmagic Design/DaVinci Resolve/Developer/Scripting"
+    so_paths = [
+        "/Applications/DaVinci Resolve/DaVinci Resolve.app/Contents/Libraries/Fusion/fusionscript.so",
+        "/Applications/DaVinci Resolve Studio/DaVinci Resolve Studio.app/Contents/Libraries/Fusion/fusionscript.so"
+    ]
+    for p in so_paths:
+        if os.path.exists(p):
+            os.environ["RESOLVE_SCRIPT_LIB"] = p
+            break
+elif sys.platform == "win32":
+    os.environ["RESOLVE_SCRIPT_API"] = r"C:\ProgramData\Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting"
+    os.environ["RESOLVE_SCRIPT_LIB"] = r"C:\Program Files\Blackmagic Design\DaVinci Resolve\fusionscript.dll"
+
 from time_parser import parse_timecodes, format_seconds
 from modules import magic_tools, export_tools, timeline_tools, badwords_tools, utility_tools, audio_tools
 
@@ -51,7 +66,7 @@ class ResolveConnection:
             # Get Resolve instance
             self.resolve = dvr.scriptapp("Resolve")
             if not self.resolve:
-                return False, "Could not connect to DaVinci Resolve. Make sure Resolve is running."
+                return False, "Could not connect to DaVinci Resolve. Please ensure DaVinci Resolve is open and External Scripting is enabled in Preferences -> System -> General -> External scripting: Local."
 
             # Get project manager
             self.project_manager = self.resolve.GetProjectManager()
