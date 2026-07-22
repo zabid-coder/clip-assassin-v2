@@ -2,6 +2,26 @@
 
 All notable changes to Clip Assassin for DaVinci Resolve will be documented in this file.
 
+## [2.0.1] - 2026-07-22
+
+### 🎉 Major New Features
+
+#### **Master Ingest & Auto Project Setup**
+- Added dedicated **Master Ingest** sidebar tab for 1-click PC/Mac Master Folder automation.
+- **Auto Resolve Launch:** Automatically launches DaVinci Resolve on Mac/Windows if it isn't running yet.
+- **Smart Project Creation:** Creates a new DaVinci Resolve project named after your Master Folder (auto-versions to `_v2`, `_v3` if a project already exists).
+- **Automated Bin Hierarchy:** Scans your Master Folder's `Raw Footages` directory and creates matching sub-bins for each camera card (`Card 01`, `Card 02`) under `Raw Footages`.
+- **Card Timelines in Projects Bin:** Generates individual timelines for each card (`Card 01 Timeline`, `Card 02 Timeline`) and organizes them neatly inside a dedicated `Projects` Bin under `Master`.
+- **Automatic Working Folders:** Automatically configures Resolve's `Project media location`, `CacheClip`, and `.gallery` working folder settings to point directly to your Master Folder location.
+
+### ✨ UI & Reliability Improvements
+
+- Removed full-screen disconnect overlay to allow instant navigation across all tabs on startup.
+- Added comprehensive **Master Ingest & Setup** section to the interactive User Manual.
+- AppleScript launcher integration for macOS to eliminate `-54` LaunchServices permission errors.
+
+---
+
 ## [1.1.0] - 2025-11-22
 
 ### 🎉 Major Features

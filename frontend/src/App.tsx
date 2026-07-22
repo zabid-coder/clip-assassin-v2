@@ -1341,6 +1341,17 @@ export default function App() {
                 </div>
 
                 <div className="bg-black/20 border border-white/5 rounded-2xl p-6">
+                  <h3 className="text-brand-primary font-semibold mb-2 flex items-center gap-2"><FolderPlus size={16}/> Master Ingest & Setup</h3>
+                  <ul className="text-sm text-white/70 space-y-2 list-disc pl-5">
+                    <li><strong>Auto Resolve Launch:</strong> Automatically launches DaVinci Resolve on your PC/Mac if it isn't running yet.</li>
+                    <li><strong>Smart Project Creation:</strong> Creates a new DaVinci Resolve project named after your Master Folder (auto-versions to <code>_v2</code> if a project already exists).</li>
+                    <li><strong>Automated Bin Hierarchy:</strong> Scans your Master Folder's <code>Raw Footages</code> directory and creates matching Bins for each camera card (<code>Card 01</code>, <code>Card 02</code>).</li>
+                    <li><strong>Card Timelines in Projects Bin:</strong> Generates individual timelines for each card (e.g., <code>Card 01 Timeline</code>) and organizes them inside a clean <code>Projects</code> Bin.</li>
+                    <li><strong>Automatic Working Folders:</strong> Automatically sets Resolve's <code>Project media location</code>, <code>CacheClip</code>, and <code>.gallery</code> paths directly to your Master Folder.</li>
+                  </ul>
+                </div>
+
+                <div className="bg-black/20 border border-white/5 rounded-2xl p-6">
                   <h3 className="text-brand-primary font-semibold mb-2 flex items-center gap-2"><Sparkles size={16}/> Magic Tools</h3>
                   <ul className="text-sm text-white/70 space-y-2 list-disc pl-5">
                     <li><strong>Timeline Snapshot:</strong> Saves a full backup of your current timeline before you run destructive tools.</li>

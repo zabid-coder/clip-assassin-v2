@@ -80,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, logs,
 
       <div className="mt-6 shrink-0 pt-4 border-t border-white/5 flex flex-col gap-1 items-center">
         <div className="text-[10px] text-white/40 font-semibold tracking-widest uppercase">
-          Version 4.0
+          Version 2.0.1
         </div>
         <div className="text-[9px] text-white/20 font-medium tracking-widest uppercase">
           BY ZABID AL MUTTAKI
