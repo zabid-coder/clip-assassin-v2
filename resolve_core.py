@@ -58,17 +58,14 @@ class ResolveConnection:
             if not self.project_manager:
                 return False, "Could not access Project Manager."
 
-            # Get current project
+            # Get current project (if any)
             self.project = self.project_manager.GetCurrentProject()
-            if not self.project:
-                return False, "No project is open. Please open a project in Resolve."
-
-            # Get media pool
-            self.media_pool = self.project.GetMediaPool()
-            if not self.media_pool:
-                return False, "Could not access Media Pool."
-
-            return True, f"Connected to project: {self.project.GetName()}"
+            if self.project:
+                self.media_pool = self.project.GetMediaPool()
+                return True, f"Connected to project: {self.project.GetName()}"
+            else:
+                self.media_pool = None
+                return True, "Connected to DaVinci Resolve (Project Manager ready)"
 
         except Exception as e:
             return False, f"Connection error: {str(e)}"
