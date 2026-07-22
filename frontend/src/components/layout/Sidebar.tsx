@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Sparkles, Library, Scissors, Combine, MonitorUp, BookOpen, Activity, CheckCircle2, XCircle, Info
+  Sparkles, Library, Scissors, Combine, MonitorUp, BookOpen, Activity, CheckCircle2, XCircle, Info, FolderPlus
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -13,6 +13,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, logs, setLogs }) => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: <Activity size={18}/> },
+    { id: 'master_ingest', label: 'Master Ingest', icon: <FolderPlus size={18}/> },
     { id: 'cut', label: 'Cut & Trim', icon: <Scissors size={18}/> },
     { id: 'magic', label: 'Magic Tools', icon: <Sparkles size={18}/> },
     { id: 'process', label: 'Process', icon: <Combine size={18}/> },

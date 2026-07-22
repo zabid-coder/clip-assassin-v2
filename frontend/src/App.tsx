@@ -4,7 +4,7 @@ import {
   MonitorUp, Image as ImageIcon, FileSpreadsheet, Video, 
   User, Mail, Sparkles, Type, FolderTree, Smartphone, Library, Box, Wand2,
   Camera, PenLine, VolumeX, AudioLines, BarChart3, Link, UploadCloud,
-  Activity, BookOpen
+  Activity, BookOpen, FolderPlus
 } from 'lucide-react'
 import { Header } from './components/layout/Header'
 import { Sidebar } from './components/layout/Sidebar'
@@ -404,6 +404,58 @@ export default function App() {
             </div>
           )}
           
+          {/* --- TAB: MASTER INGEST --- */}
+          {(activeTab === 'master_ingest' || activeTab === 'dashboard') && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 grid grid-cols-1 md:grid-cols-2 gap-5 items-start mb-6">
+              <FeatureCard hidden={activeTab === 'dashboard' && !favorites.includes('master_ingest')} 
+                id="master_ingest"
+                isFavorite={favorites.includes('master_ingest')}
+                onToggleFavorite={() => toggleFavorite("master_ingest")} 
+                description="Automate project creation, Media Pool bin setup, and Timeline generation directly from a PC Master Folder."
+                className="md:col-span-2 ring-1 ring-brand-primary/30 shadow-xl shadow-brand-primary/20"
+                title="Master Folder Setup & Auto Ingest" 
+                icon={<FolderPlus size={18} />} 
+                category="organize"
+                helpText="Select your PC/Mac Master Folder path. The app will launch DaVinci Resolve (if closed), create a new versioned project, create Bins for each subfolder, import media assets, and create individual Timelines per folder automatically."
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col md:flex-row gap-3 items-end">
+                    <div className="flex-1 w-full">
+                      <InputField 
+                        id="masterFolderInput" 
+                        browseType="folder" 
+                        placeholder="/Volumes/SSD/Projects/Wedding_Dhaka" 
+                      />
+                    </div>
+                    <div className="w-full md:w-1/3">
+                      <ActionButton 
+                        text="Start Master Ingest" 
+                        category="organize" variant="primary"
+                        isLoading={loading['master_ingest']}
+                        onClick={() => {
+                          const inputEl = document.getElementById('masterFolderInput') as HTMLInputElement;
+                          const folderPath = inputEl?.value?.trim();
+                          if (!folderPath) {
+                            addLog('Please select or enter a Master Folder path.', 'error');
+                            return;
+                          }
+                          runTask('master_ingest', { master_folder_path: folderPath }, 'master_ingest');
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-xs text-white/50 space-y-1">
+                    <p className="font-semibold text-white/70">✨ What this automation does:</p>
+                    <p>• Opens DaVinci Resolve automatically if not already running.</p>
+                    <p>• Creates a new project named after the Master Folder (with smart versioning <code className="text-brand-primary">_v2</code> if exists).</p>
+                    <p>• Creates Bins in Media Pool mirroring each sub-folder.</p>
+                    <p>• Imports video/audio files into their respective Bins and generates individual Timelines.</p>
+                  </div>
+                </div>
+              </FeatureCard>
+            </div>
+          )}
+
           {/* --- TAB: MAGIC TOOLS --- */}
           {(activeTab === 'magic' || activeTab === 'dashboard') && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
