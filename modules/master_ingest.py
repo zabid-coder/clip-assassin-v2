@@ -78,6 +78,40 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
         return False, "Could not access Resolve Project Manager."
     
     base_project_name = os.path.basename(os.path.normpath(master_folder_path))
+    
+    # 1. Project Library / Database Setup inside Master Folder
+    db_folder = None
+    try:
+        for item in os.listdir(master_folder_path):
+            full_p = os.path.join(master_folder_path, item)
+            if os.path.isdir(full_p) and "database" in item.lower():
+                db_folder = full_p
+                break
+    except Exception:
+        pass
+        
+    if not db_folder:
+        db_folder = os.path.join(master_folder_path, "Davinci Resolve Database")
+        try:
+            os.makedirs(db_folder, exist_ok=True)
+        except Exception:
+            pass
+
+    # Try creating/switching Project Library (Database) if supported by Resolve API
+    clean_db_name = "".join([c for c in base_project_name if c.isalnum() or c == '_']).strip() or "Master_Library"
+    try:
+        db_dict = {"DbType": "disk", "DbName": clean_db_name, "Location": db_folder}
+        if hasattr(pm, "CreateProjectLibrary"):
+            pm.CreateProjectLibrary(db_dict)
+            pm.SetCurrentDatabase(db_dict)
+        elif hasattr(pm, "CreateDatabase"):
+            db_dict_alt = {"DbType": "disk", "DbName": clean_db_name, "Directory": db_folder}
+            pm.CreateDatabase(db_dict_alt)
+            pm.SetCurrentDatabase(db_dict_alt)
+    except Exception as e:
+        print(f"Notice on Project Library API: {e}")
+
+    # 2. Project Creation & Versioning
     existing_projects = pm.GetProjectListInCurrentFolder() or []
     target_project_name = get_versioned_project_name(base_project_name, existing_projects)
     
