@@ -1310,7 +1310,7 @@ export default function App() {
                   <div>
                      <h3 className="text-sm font-semibold mb-3 text-white/80 uppercase tracking-wider">About Clip Assassin</h3>
                      <p className="text-xs text-white/50 leading-relaxed mb-3">Clip Assassin is an advanced automation suite tailored specifically for DaVinci Resolve. Built to dramatically reduce repetitive tasks in professional post-production workflows.</p>
-                     <p className="text-[10px] font-mono text-brand-primary bg-brand-primary/10 px-2 py-1 rounded inline-block">Version 4.0.0</p>
+                     <p className="text-[10px] font-mono text-brand-primary bg-brand-primary/10 px-2 py-1 rounded inline-block">Version 2.0.1</p>
                   </div>
                 </div>
               </div>
@@ -1443,7 +1443,7 @@ export default function App() {
         <img src="/logo.jpg" alt="Clip Assassin Logo" className="w-6 h-6 rounded-md shadow-sm border border-brand-primary/20" />
         <div className="flex flex-col">
           <span className="text-[11px] font-bold text-white/80 tracking-wide leading-tight">Clip Assassin</span>
-          <span className="text-[9px] font-semibold text-brand-primary uppercase tracking-widest leading-tight">Version 4.0</span>
+          <span className="text-[9px] font-semibold text-brand-primary uppercase tracking-widest leading-tight">Version 2.0.1</span>
         </div>
       </div>
     </div>
