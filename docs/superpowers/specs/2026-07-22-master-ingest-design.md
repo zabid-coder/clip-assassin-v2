@@ -71,11 +71,13 @@ Automate the tedious initial project setup in DaVinci Resolve Studio by scanning
       return StandardResponse(success=success, message=msg)
   ```
 
-### 3. Frontend Component (`frontend/src/App.tsx`)
-- New Feature Card inside **Organize & Process** tab:
-  - Input field for Master Folder Path (with Folder Browser button).
-  - "Start Master Ingest" action button with loading spinner.
-  - Interactive toast/status message on completion.
+### 3. Frontend Component (`frontend/src/App.tsx` & `Sidebar.tsx`)
+- **Dedicated Navigation Tab**: Add a new dedicated tab in the left sidebar: **"Master Ingest"** (Icon: Folder / Server / Ingest).
+- **Dedicated Page Layout**:
+  - Hero Header with feature explanation.
+  - Large Master Folder Path Input Card (with OS Directory Picker button).
+  - Advanced Options (Auto-launch Resolve toggle, Versioning settings).
+  - Prominent "Start Master Ingest" Action Button with real-time status feedback and timeline counter.
 
 ---
 
