@@ -23,6 +23,7 @@ wheels/
 .installed.cfg
 *.egg
 app_data.db
+*.spec
 
 # Node
 node_modules/
