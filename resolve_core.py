@@ -444,6 +444,11 @@ class ResolveConnection:
         except Exception as e:
             return False, f"Error switching timeline: {e}"
 
+    def run_master_ingest(self, master_folder_path: str):
+        """Automate project creation, Media Pool bin setup, and Timeline generation from Master Folder"""
+        from modules import master_ingest
+        return master_ingest.process_master_ingest(self, master_folder_path)
+
 # Testing
 if __name__ == "__main__":
     print("Testing Resolve Connection...")
