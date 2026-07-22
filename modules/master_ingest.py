@@ -31,17 +31,17 @@ def ensure_resolve_running(core) -> tuple[bool, str]:
     if success:
         return True, "Connected to DaVinci Resolve."
     
-    # Attempt direct binary launch to bypass OS sandbox permission errors
+    # Attempt OS launch using official macOS open bundle
     try:
         if sys.platform == "darwin":
-            mac_paths = [
-                "/Applications/DaVinci Resolve/DaVinci Resolve.app/Contents/MacOS/Resolve",
-                "/Applications/DaVinci Resolve Studio/DaVinci Resolve Studio.app/Contents/MacOS/Resolve"
+            mac_apps = [
+                "/Applications/DaVinci Resolve/DaVinci Resolve.app",
+                "/Applications/DaVinci Resolve Studio/DaVinci Resolve Studio.app"
             ]
             launched = False
-            for p in mac_paths:
-                if os.path.exists(p):
-                    subprocess.Popen([p], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            for app_p in mac_apps:
+                if os.path.exists(app_p):
+                    subprocess.Popen(["open", app_p])
                     launched = True
                     break
             if not launched:
@@ -70,7 +70,7 @@ def ensure_resolve_running(core) -> tuple[bool, str]:
         if success:
             return True, "Resolve started and connected successfully."
             
-    return False, "Timed out waiting for DaVinci Resolve to start. Please open DaVinci Resolve manually."
+    return False, "Timed out waiting for DaVinci Resolve to start. Please make sure DaVinci Resolve is open."
 
 def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
     if not master_folder_path or not os.path.isdir(master_folder_path):
