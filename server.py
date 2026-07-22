@@ -66,6 +66,9 @@ class ShotlistRequest(BaseModel):
     target_path: str
     template_path: Optional[str] = ""
 
+class MasterIngestRequest(BaseModel):
+    master_folder_path: str
+
 class TemplateImportRequest(BaseModel):
     template_name: str
 
@@ -177,6 +180,11 @@ def execute_add_adjustment():
 @app.post("/api/export_shotlist", response_model=StandardResponse)
 def execute_export_shotlist(req: ShotlistRequest):
     success, msg = engine.export_shotlist_doc(req.format, req.target_path, req.template_path)
+    return StandardResponse(success=success, message=msg)
+
+@app.post("/api/master_ingest", response_model=StandardResponse)
+def execute_master_ingest(req: MasterIngestRequest):
+    success, msg = engine.run_master_ingest(req.master_folder_path)
     return StandardResponse(success=success, message=msg)
 
 @app.post("/api/subtitles", response_model=StandardResponse)
