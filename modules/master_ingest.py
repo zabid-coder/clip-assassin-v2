@@ -79,37 +79,15 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
     
     base_project_name = os.path.basename(os.path.normpath(master_folder_path))
     
-    # 1. Project Library / Database Setup inside Master Folder
-    db_folder = None
+    # 1. Project Library (Database) Selection: Check if a database with this name already exists in Resolve
     try:
-        for item in os.listdir(master_folder_path):
-            full_p = os.path.join(master_folder_path, item)
-            if os.path.isdir(full_p) and "database" in item.lower():
-                db_folder = full_p
+        db_list = pm.GetDatabaseList() or []
+        for db in db_list:
+            if isinstance(db, dict) and db.get("DbName") == base_project_name:
+                pm.SetCurrentDatabase(db)
                 break
-    except Exception:
-        pass
-        
-    if not db_folder:
-        db_folder = os.path.join(master_folder_path, "Davinci Resolve Database")
-        try:
-            os.makedirs(db_folder, exist_ok=True)
-        except Exception:
-            pass
-
-    # Try creating/switching Project Library (Database) if supported by Resolve API
-    clean_db_name = "".join([c for c in base_project_name if c.isalnum() or c == '_']).strip() or "Master_Library"
-    try:
-        db_dict = {"DbType": "disk", "DbName": clean_db_name, "Location": db_folder}
-        if hasattr(pm, "CreateProjectLibrary"):
-            pm.CreateProjectLibrary(db_dict)
-            pm.SetCurrentDatabase(db_dict)
-        elif hasattr(pm, "CreateDatabase"):
-            db_dict_alt = {"DbType": "disk", "DbName": clean_db_name, "Directory": db_folder}
-            pm.CreateDatabase(db_dict_alt)
-            pm.SetCurrentDatabase(db_dict_alt)
     except Exception as e:
-        print(f"Notice on Project Library API: {e}")
+        print(f"Notice on Database switch: {e}")
 
     # 2. Project Creation & Versioning
     existing_projects = pm.GetProjectListInCurrentFolder() or []
@@ -130,7 +108,10 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
     root_folder = media_pool.GetRootFolder()
     created_timelines = []
     
-    # Check if there is a 'Raw Footages' or 'Footage' folder
+    # 3. Create 'Projects' Bin under Master to hold all generated Timelines
+    projects_bin = media_pool.AddSubFolder(root_folder, "Projects")
+    
+    # Check if there is a 'Raw Footages' or 'Footage' folder on disk
     raw_footages_dir = None
     all_subitems = os.listdir(master_folder_path)
     for item in all_subitems:
@@ -139,23 +120,29 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
             raw_footages_dir = full_p
             break
             
-    # List of card/footage folders to process: (bin_name, folder_path)
-    folders_to_process = []
+    # List of card/footage folders to process: (card_name, folder_path)
+    cards_to_process = []
     
     if raw_footages_dir:
-        # Process cards inside Raw Footages
+        # Create 'Raw Footages' Bin under Master
+        raw_bin = media_pool.AddSubFolder(root_folder, "Raw Footages")
+        
+        # Collect Card 01, Card 02 folders inside Raw Footages
         card_dirs = [f for f in os.listdir(raw_footages_dir) if os.path.isdir(os.path.join(raw_footages_dir, f))]
         for card in sorted(card_dirs):
             if card.lower() not in IGNORED_FOLDERS:
-                folders_to_process.append((card, os.path.join(raw_footages_dir, card)))
+                cards_to_process.append((card, os.path.join(raw_footages_dir, card)))
     else:
-        # Process direct subfolders of Master Folder, ignoring non-media folders
+        # Create 'Footage' Bin under Master
+        raw_bin = media_pool.AddSubFolder(root_folder, "Footage")
+        
+        # Collect valid subfolders directly from Master Folder
         for item in sorted(all_subitems):
             full_p = os.path.join(master_folder_path, item)
             if os.path.isdir(full_p) and item.lower() not in IGNORED_FOLDERS:
-                folders_to_process.append((item, full_p))
+                cards_to_process.append((item, full_p))
                 
-    # Also check if BG Music or Audio folder exists to import as Bin
+    # Also check if BG Music / Audio folder exists on disk
     bg_music_dir = None
     for item in all_subitems:
         full_p = os.path.join(master_folder_path, item)
@@ -163,13 +150,14 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
             bg_music_dir = (item, full_p)
             break
 
-    # Process Card / Footage Folders -> Bins + Timelines
-    for bin_name, folder_path in folders_to_process:
-        sub_bin = media_pool.AddSubFolder(root_folder, bin_name)
-        if sub_bin:
-            media_pool.SetCurrentFolder(sub_bin)
+    # 4. Import Footage & Generate Timelines
+    for card_name, folder_path in cards_to_process:
+        # Create Card Bin inside Raw Footages Bin
+        card_bin = media_pool.AddSubFolder(raw_bin, card_name)
+        if card_bin:
+            media_pool.SetCurrentFolder(card_bin)
         
-        # Recursively collect all supported media files inside card folder (ignoring 'private' name for timeline!)
+        # Collect supported media files recursively inside card folder
         media_files = []
         for r, d, files in os.walk(folder_path):
             for file in files:
@@ -180,12 +168,16 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
         if media_files:
             imported_items = media_pool.ImportMedia(media_files)
             if imported_items:
-                tl_name = f"{bin_name} Timeline"
+                # Switch to Projects Bin to create the Timeline inside Projects Bin!
+                if projects_bin:
+                    media_pool.SetCurrentFolder(projects_bin)
+                
+                tl_name = f"{card_name} Timeline"
                 tl = media_pool.CreateTimelineFromClips(tl_name, imported_items)
                 if tl:
                     created_timelines.append(tl_name)
                     
-    # Process BG Music if found -> Bin only
+    # 5. Import BG Music into 'BG Music' Bin under Master (if exists)
     if bg_music_dir:
         b_name, b_path = bg_music_dir
         music_bin = media_pool.AddSubFolder(root_folder, b_name)
@@ -200,4 +192,4 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
             if m_files:
                 media_pool.ImportMedia(m_files)
     
-    return True, f"✓ Successfully created project '{target_project_name}' with {len(created_timelines)} Card Timelines: {', '.join(created_timelines)}"
+    return True, f"✓ Successfully created project '{target_project_name}' with {len(created_timelines)} Card Timelines inside Projects Bin: {', '.join(created_timelines)}"
