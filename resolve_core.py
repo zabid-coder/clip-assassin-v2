@@ -66,7 +66,7 @@ class ResolveConnection:
             # Get Resolve instance
             self.resolve = dvr.scriptapp("Resolve")
             if not self.resolve:
-                return False, "Could not connect to DaVinci Resolve. Please ensure DaVinci Resolve is open and External Scripting is enabled in Preferences -> System -> General -> External scripting: Local."
+                return False, "Could not connect to DaVinci Resolve. Please ensure DaVinci Resolve is open, and close any open dialogs/modal windows (like 'Add Project Library' or 'Preferences') inside Resolve."
 
             # Get project manager
             self.project_manager = self.resolve.GetProjectManager()
