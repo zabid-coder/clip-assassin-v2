@@ -31,21 +31,14 @@ def ensure_resolve_running(core) -> tuple[bool, str]:
     if success:
         return True, "Connected to DaVinci Resolve."
     
-    # Attempt OS launch using official macOS open bundle
+    # Attempt OS launch using AppleScript to bypass macOS LaunchServices error -54
     try:
         if sys.platform == "darwin":
-            mac_apps = [
-                "/Applications/DaVinci Resolve/DaVinci Resolve.app",
-                "/Applications/DaVinci Resolve Studio/DaVinci Resolve Studio.app"
-            ]
-            launched = False
-            for app_p in mac_apps:
-                if os.path.exists(app_p):
-                    subprocess.Popen(["open", app_p])
-                    launched = True
-                    break
-            if not launched:
-                subprocess.Popen(["open", "-a", "DaVinci Resolve"])
+            res = subprocess.run(["osascript", "-e", 'tell application "DaVinci Resolve" to activate'], capture_output=True)
+            if res.returncode != 0:
+                res2 = subprocess.run(["osascript", "-e", 'tell application "DaVinci Resolve Studio" to activate'], capture_output=True)
+                if res2.returncode != 0:
+                    subprocess.Popen(["open", "-a", "DaVinci Resolve"])
         elif sys.platform == "win32":
             win_paths = [
                 r"C:\Program Files\Blackmagic Design\DaVinci Resolve\Resolve.exe"
@@ -70,7 +63,7 @@ def ensure_resolve_running(core) -> tuple[bool, str]:
         if success:
             return True, "Resolve started and connected successfully."
             
-    return False, "Timed out waiting for DaVinci Resolve to start. Please make sure DaVinci Resolve is open."
+    return False, "Timed out waiting for DaVinci Resolve to start. Please open DaVinci Resolve on your Mac and try again."
 
 def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
     if not master_folder_path or not os.path.isdir(master_folder_path):
