@@ -69,6 +69,17 @@ class ShotlistRequest(BaseModel):
 class MasterIngestRequest(BaseModel):
     master_folder_path: str
 
+class CreateMasterFolderRequest(BaseModel):
+    parent_dir: str
+    project_name: str
+    client_name: Optional[str] = ""
+    project_type: Optional[str] = "Standard Video"
+
+class CreateMasterFolderResponse(BaseModel):
+    success: bool
+    message: str
+    folder_path: str
+
 class TemplateImportRequest(BaseModel):
     template_name: str
 
@@ -186,6 +197,11 @@ def execute_export_shotlist(req: ShotlistRequest):
 def execute_master_ingest(req: MasterIngestRequest):
     success, msg = engine.run_master_ingest(req.master_folder_path)
     return StandardResponse(success=success, message=msg)
+
+@app.post("/api/create_master_folder", response_model=CreateMasterFolderResponse)
+def execute_create_master_folder(req: CreateMasterFolderRequest):
+    success, msg, folder_path = engine.run_create_master_folder(req.parent_dir, req.project_name, req.client_name, req.project_type)
+    return CreateMasterFolderResponse(success=success, message=msg, folder_path=folder_path)
 
 @app.post("/api/subtitles", response_model=StandardResponse)
 def execute_subtitles():

@@ -65,6 +65,65 @@ def ensure_resolve_running(core) -> tuple[bool, str]:
             
     return False, "Could not connect to DaVinci Resolve. Please ensure DaVinci Resolve is open, and close any open dialogs/modal windows (like 'Add Project Library' or 'Preferences') inside Resolve."
 
+def create_master_folder_structure(parent_dir: str, project_name: str, client_name: str = "", project_type: str = "Standard Video") -> tuple[bool, str, str]:
+    """
+    Creates a Post Haste-style standardized Master Folder structure on disk.
+    Returns (success, message, folder_path).
+    """
+    if not parent_dir or not os.path.exists(parent_dir):
+        return False, f"Invalid parent folder path: '{parent_dir}'", ""
+    
+    clean_proj = project_name.strip() if project_name else "Untitled Project"
+    clean_client = client_name.strip() if client_name else ""
+    date_str = time.strftime("%Y-%m-%d")
+    
+    if clean_client:
+        folder_name = f"{date_str}_{clean_client}_{clean_proj}"
+    else:
+        folder_name = f"{date_str}_{clean_proj}"
+        
+    master_path = os.path.join(parent_dir, folder_name)
+    
+    # Preset folder hierarchies
+    if "Social" in project_type:
+        subfolders = [
+            os.path.join("Raw Footages", "Card 01"),
+            "Davinci Resolve Database",
+            "Audio & Music",
+            "Graphics & Assets",
+            "Exports"
+        ]
+    elif "Commercial" in project_type:
+        subfolders = [
+            os.path.join("Raw Footages", "Camera A"),
+            os.path.join("Raw Footages", "Camera B"),
+            "Davinci Resolve Database",
+            "Audio & Voiceover",
+            "Motion Graphics",
+            "Photoshop",
+            "Client Approvals & Exports",
+            "Documents"
+        ]
+    else: # Standard Video & Film
+        subfolders = [
+            os.path.join("Raw Footages", "Card 01"),
+            os.path.join("Raw Footages", "Card 02"),
+            "Davinci Resolve Database",
+            "BG Music",
+            "After Effects",
+            "Photoshop",
+            "Exports",
+            "Production Documents"
+        ]
+        
+    try:
+        os.makedirs(master_path, exist_ok=True)
+        for sf in subfolders:
+            os.makedirs(os.path.join(master_path, sf), exist_ok=True)
+        return True, f"✓ Master Folder structure successfully created at: {master_path}", master_path
+    except Exception as e:
+        return False, f"Failed to create Master Folder: {str(e)}", ""
+
 def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
     if not master_folder_path or not os.path.isdir(master_folder_path):
         return False, f"Invalid master folder path: '{master_folder_path}'"

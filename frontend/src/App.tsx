@@ -263,11 +263,57 @@ export default function App() {
       
       checkStats()
       fetchContext()
-      if (!data.success) throw new Error(data.message)
     } catch (e: any) {
       addLog(`Error: ${e.message}`, 'error')
     } finally {
       setLoading(prev => ({ ...prev, [buttonId]: false }))
+    }
+  }
+
+  const handleCreateMasterFolder = async () => {
+    const parentEl = document.getElementById('createParentFolderInput') as HTMLInputElement;
+    const projEl = document.getElementById('createProjectNameInput') as HTMLInputElement;
+    const clientEl = document.getElementById('createClientNameInput') as HTMLInputElement;
+    const presetEl = document.getElementById('createPresetSelect') as HTMLSelectElement;
+
+    const parentDir = parentEl?.value?.trim();
+    const projName = projEl?.value?.trim();
+    const clientName = clientEl?.value?.trim() || "";
+    const projType = presetEl?.value || "Standard Video & Film";
+
+    if (!parentDir || !projName) {
+      addLog('Please specify a Parent Directory and Project Name.', 'error');
+      return;
+    }
+
+    setLoading(prev => ({ ...prev, create_master_folder: true }));
+    addLog('Creating Master Folder structure on disk...', 'info');
+
+    try {
+      const res = await fetch(`${API_BASE}/create_master_folder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parent_dir: parentDir,
+          project_name: projName,
+          client_name: clientName,
+          project_type: projType
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        addLog(data.message, 'success');
+        const masterInputEl = document.getElementById('masterFolderInput') as HTMLInputElement;
+        if (masterInputEl && data.folder_path) {
+          masterInputEl.value = data.folder_path;
+        }
+      } else {
+        addLog(data.message || 'Failed to create Master Folder', 'error');
+      }
+    } catch (e: any) {
+      addLog(`Error: ${e.message}`, 'error');
+    } finally {
+      setLoading(prev => ({ ...prev, create_master_folder: false }));
     }
   }
 
@@ -385,19 +431,78 @@ export default function App() {
             </div>
           )}
           
-          {/* --- TAB: MASTER INGEST --- */}
+          {/* --- TAB: MASTER INGEST & FOLDER SETUP --- */}
           {(activeTab === 'master_ingest' || activeTab === 'dashboard') && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 grid grid-cols-1 md:grid-cols-2 gap-5 items-start mb-6">
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6 mb-6">
+              
+              {/* Card 1: Post Haste Style Disk Template Creator */}
+              <FeatureCard hidden={activeTab === 'dashboard' && !favorites.includes('create_master_folder')} 
+                id="create_master_folder"
+                isFavorite={favorites.includes('create_master_folder')}
+                onToggleFavorite={() => toggleFavorite("create_master_folder")} 
+                description="Generate a standardized Master Folder structure on disk with custom parameters (Post Haste Style)."
+                className="ring-1 ring-brand-primary/30 shadow-xl shadow-brand-primary/20"
+                title="1-Click Master Folder Template Generator (Post Haste Style)" 
+                icon={<FolderTree size={18} />} 
+                category="magic"
+                helpText="Specify your parent directory, project name, client name, and folder preset. Clip Assassin will automatically create the complete standardized directory hierarchy on disk (Raw Footages, Davinci Database, BG Music, AE/PS, Exports)."
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-white/70 mb-1.5 block">Parent Directory (Disk Root)</label>
+                      <InputField 
+                        id="createParentFolderInput" 
+                        browseType="folder" 
+                        placeholder="/Users/audiovisual/Desktop" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-white/70 mb-1.5 block">Project Name *</label>
+                      <InputField 
+                        id="createProjectNameInput" 
+                        placeholder="e.g. UNICEF_WASH_Visit" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-white/70 mb-1.5 block">Client / Agency (Optional)</label>
+                      <InputField 
+                        id="createClientNameInput" 
+                        placeholder="e.g. UNICEF" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-white/70 mb-1.5 block">Folder Template Preset</label>
+                      <SelectField 
+                        id="createPresetSelect"
+                        options={['Standard Video & Film', 'Social Media & Reels', 'Commercial / Corporate']}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <div className="w-full md:w-1/3">
+                      <ActionButton 
+                        text="⚡ Create Master Folder Structure" 
+                        category="magic" variant="primary"
+                        isLoading={loading['create_master_folder']}
+                        onClick={handleCreateMasterFolder}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </FeatureCard>
+
+              {/* Card 2: DaVinci Resolve Auto Ingest & Project Setup */}
               <FeatureCard hidden={activeTab === 'dashboard' && !favorites.includes('master_ingest')} 
                 id="master_ingest"
                 isFavorite={favorites.includes('master_ingest')}
                 onToggleFavorite={() => toggleFavorite("master_ingest")} 
-                description="Automate project creation, Media Pool bin setup, and Timeline generation directly from a PC Master Folder."
-                className="md:col-span-2 ring-1 ring-brand-primary/30 shadow-xl shadow-brand-primary/20"
-                title="Master Folder Setup & Auto Ingest" 
+                description="Automate project creation, Media Pool bin setup, working folder paths, and Card Timeline generation."
+                className="ring-1 ring-brand-primary/30 shadow-xl shadow-brand-primary/20"
+                title="DaVinci Resolve Auto Ingest & Project Setup" 
                 icon={<FolderPlus size={18} />} 
                 category="organize"
-                helpText="Select your PC/Mac Master Folder path. The app will launch DaVinci Resolve (if closed), create a new versioned project, create Bins for each subfolder, import media assets, and create individual Timelines per folder automatically."
+                helpText="Select your Master Folder path (auto-filled if created above). Clip Assassin will launch DaVinci Resolve, create a versioned project, configure working folder settings, build Media Pool Bins, import media, and create Card Timelines automatically."
               >
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col md:flex-row gap-3 items-end">
@@ -405,12 +510,12 @@ export default function App() {
                       <InputField 
                         id="masterFolderInput" 
                         browseType="folder" 
-                        placeholder="/Volumes/SSD/Projects/Wedding_Dhaka" 
+                        placeholder="/Users/audiovisual/Desktop/2026-07-23_UNICEF_WASH_Visit" 
                       />
                     </div>
                     <div className="w-full md:w-1/3">
                       <ActionButton 
-                        text="Start Master Ingest" 
+                        text="🎬 Start Master Ingest" 
                         category="organize" variant="primary"
                         isLoading={loading['master_ingest']}
                         onClick={() => {
@@ -426,14 +531,15 @@ export default function App() {
                     </div>
                   </div>
                   <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-xs text-white/50 space-y-1">
-                    <p className="font-semibold text-white/70">✨ What this automation does:</p>
-                    <p>• Opens DaVinci Resolve automatically if not already running.</p>
-                    <p>• Creates a new project named after the Master Folder (with smart versioning <code className="text-brand-primary">_v2</code> if exists).</p>
-                    <p>• Creates Bins in Media Pool mirroring each sub-folder.</p>
-                    <p>• Imports video/audio files into their respective Bins and generates individual Timelines.</p>
+                    <p className="font-semibold text-white/70">✨ What Master Ingest automates in Resolve:</p>
+                    <p>• Opens DaVinci Resolve automatically if not running.</p>
+                    <p>• Creates a versioned project named after the Master Folder (e.g. <code className="text-brand-primary">ProjectName_v2</code>).</p>
+                    <p>• Automatically configures <code className="text-brand-primary">Project media location</code>, <code className="text-brand-primary">CacheClip</code>, and <code className="text-brand-primary">.gallery</code> to your Master Folder.</p>
+                    <p>• Builds Media Pool Bins mirroring card folders and generates individual Timelines inside the <code className="text-brand-primary">Projects</code> Bin.</p>
                   </div>
                 </div>
               </FeatureCard>
+
             </div>
           )}
 

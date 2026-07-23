@@ -461,6 +461,11 @@ class ResolveConnection:
         from modules import master_ingest
         return master_ingest.process_master_ingest(self, master_folder_path)
 
+    def run_create_master_folder(self, parent_dir: str, project_name: str, client_name: str = "", project_type: str = "Standard Video"):
+        """Create a Post Haste style standardized Master Folder template on disk"""
+        from modules import master_ingest
+        return master_ingest.create_master_folder_structure(parent_dir, project_name, client_name, project_type)
+
 # Testing
 if __name__ == "__main__":
     print("Testing Resolve Connection...")
