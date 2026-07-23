@@ -15,11 +15,13 @@ class TestMasterIngest(unittest.TestCase):
         from modules.master_ingest import create_master_folder_structure
         
         with tempfile.TemporaryDirectory() as tmpdir:
-            success, msg, path = create_master_folder_structure(tmpdir, "Test Project", "Client X", "Standard Video")
+            success, msg, path = create_master_folder_structure(tmpdir, "Test Project", "Client X", "Standard Video", "2026-07-25")
             self.assertTrue(success)
             self.assertTrue(os.path.exists(path))
+            self.assertIn("2026-07-25_Client X_Test Project", path)
             self.assertTrue(os.path.exists(os.path.join(path, "Raw Footages", "Card 01")))
             self.assertTrue(os.path.exists(os.path.join(path, "Davinci Resolve Database")))
+            self.assertTrue(os.path.exists(os.path.join(path, "Logos & Branding")))
             self.assertTrue(os.path.exists(os.path.join(path, "Exports")))
 
 if __name__ == "__main__":

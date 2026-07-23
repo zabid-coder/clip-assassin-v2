@@ -74,6 +74,7 @@ class CreateMasterFolderRequest(BaseModel):
     project_name: str
     client_name: Optional[str] = ""
     project_type: Optional[str] = "Standard Video"
+    custom_date: Optional[str] = ""
 
 class CreateMasterFolderResponse(BaseModel):
     success: bool
@@ -200,7 +201,7 @@ def execute_master_ingest(req: MasterIngestRequest):
 
 @app.post("/api/create_master_folder", response_model=CreateMasterFolderResponse)
 def execute_create_master_folder(req: CreateMasterFolderRequest):
-    success, msg, folder_path = engine.run_create_master_folder(req.parent_dir, req.project_name, req.client_name, req.project_type)
+    success, msg, folder_path = engine.run_create_master_folder(req.parent_dir, req.project_name, req.client_name, req.project_type, req.custom_date)
     return CreateMasterFolderResponse(success=success, message=msg, folder_path=folder_path)
 
 @app.post("/api/subtitles", response_model=StandardResponse)

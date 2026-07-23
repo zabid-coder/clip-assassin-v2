@@ -65,7 +65,7 @@ def ensure_resolve_running(core) -> tuple[bool, str]:
             
     return False, "Could not connect to DaVinci Resolve. Please ensure DaVinci Resolve is open, and close any open dialogs/modal windows (like 'Add Project Library' or 'Preferences') inside Resolve."
 
-def create_master_folder_structure(parent_dir: str, project_name: str, client_name: str = "", project_type: str = "Standard Video") -> tuple[bool, str, str]:
+def create_master_folder_structure(parent_dir: str, project_name: str, client_name: str = "", project_type: str = "Standard Video", custom_date: str = "") -> tuple[bool, str, str]:
     """
     Creates a Post Haste-style standardized Master Folder structure on disk.
     Returns (success, message, folder_path).
@@ -75,7 +75,7 @@ def create_master_folder_structure(parent_dir: str, project_name: str, client_na
     
     clean_proj = project_name.strip() if project_name else "Untitled Project"
     clean_client = client_name.strip() if client_name else ""
-    date_str = time.strftime("%Y-%m-%d")
+    date_str = custom_date.strip() if custom_date and custom_date.strip() else time.strftime("%Y-%m-%d")
     
     if clean_client:
         folder_name = f"{date_str}_{clean_client}_{clean_proj}"
@@ -84,11 +84,12 @@ def create_master_folder_structure(parent_dir: str, project_name: str, client_na
         
     master_path = os.path.join(parent_dir, folder_name)
     
-    # Preset folder hierarchies
+    # Preset folder hierarchies (All presets include 'Logos & Branding')
     if "Social" in project_type:
         subfolders = [
             os.path.join("Raw Footages", "Card 01"),
             "Davinci Resolve Database",
+            "Logos & Branding",
             "Audio & Music",
             "Graphics & Assets",
             "Exports"
@@ -98,6 +99,7 @@ def create_master_folder_structure(parent_dir: str, project_name: str, client_na
             os.path.join("Raw Footages", "Camera A"),
             os.path.join("Raw Footages", "Camera B"),
             "Davinci Resolve Database",
+            "Logos & Branding",
             "Audio & Voiceover",
             "Motion Graphics",
             "Photoshop",
@@ -109,6 +111,7 @@ def create_master_folder_structure(parent_dir: str, project_name: str, client_na
             os.path.join("Raw Footages", "Card 01"),
             os.path.join("Raw Footages", "Card 02"),
             "Davinci Resolve Database",
+            "Logos & Branding",
             "BG Music",
             "After Effects",
             "Photoshop",

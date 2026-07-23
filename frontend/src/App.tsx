@@ -275,11 +275,13 @@ export default function App() {
     const projEl = document.getElementById('createProjectNameInput') as HTMLInputElement;
     const clientEl = document.getElementById('createClientNameInput') as HTMLInputElement;
     const presetEl = document.getElementById('createPresetSelect') as HTMLSelectElement;
+    const dateEl = document.getElementById('createDateInput') as HTMLInputElement;
 
     const parentDir = parentEl?.value?.trim();
     const projName = projEl?.value?.trim();
     const clientName = clientEl?.value?.trim() || "";
     const projType = presetEl?.value || "Standard Video & Film";
+    const customDate = dateEl?.value?.trim() || "";
 
     if (!parentDir || !projName) {
       addLog('Please specify a Parent Directory and Project Name.', 'error');
@@ -297,7 +299,8 @@ export default function App() {
           parent_dir: parentDir,
           project_name: projName,
           client_name: clientName,
-          project_type: projType
+          project_type: projType,
+          custom_date: customDate
         })
       });
       const data = await res.json();
@@ -448,9 +451,9 @@ export default function App() {
                 helpText="Creates a clean, organized directory structure (Raw Footages, DaVinci Database, Audio, Graphics, Exports) on disk with automatic date and client prefixing."
               >
                 <div className="flex flex-col gap-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="text-xs font-semibold text-white/70 mb-1.5 block">Parent Directory (Disk Root)</label>
+                      <label className="text-xs font-semibold text-white/70 mb-1.5 block">Parent Directory (Disk Root) *</label>
                       <InputField 
                         id="createParentFolderInput" 
                         browseType="folder" 
@@ -465,13 +468,22 @@ export default function App() {
                       />
                     </div>
                     <div>
+                      <label className="text-xs font-semibold text-white/70 mb-1.5 block">Project Date (YYYY-MM-DD)</label>
+                      <InputField 
+                        id="createDateInput" 
+                        type="date"
+                        placeholder="YYYY-MM-DD" 
+                        defaultValue={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                    <div>
                       <label className="text-xs font-semibold text-white/70 mb-1.5 block">Client / Agency (Optional)</label>
                       <InputField 
                         id="createClientNameInput" 
                         placeholder="e.g. UNICEF" 
                       />
                     </div>
-                    <div>
+                    <div className="md:col-span-2">
                       <label className="text-xs font-semibold text-white/70 mb-1.5 block">Folder Template Preset</label>
                       <SelectField 
                         id="createPresetSelect"
@@ -1448,12 +1460,41 @@ export default function App() {
                 </div>
 
                 <div className="bg-black/20 border border-white/5 rounded-2xl p-6">
-                  <h3 className="text-brand-primary font-semibold mb-2 flex items-center gap-2"><FolderPlus size={16}/> Master Ingest & Setup</h3>
-                  <ul className="text-sm text-white/70 space-y-2 list-disc pl-5">
-                    <li><strong>Master Folder Setup:</strong> Creates an organized directory structure (Raw Footages, DaVinci Database, Audio, Exports) on disk with date and client prefixing.</li>
-                    <li><strong>Auto Ingest:</strong> Launches DaVinci Resolve, connects to the Project Library inside <code>Davinci Resolve Database</code>, creates a versioned project, sets working folders (Project Media Location, CacheClip, .gallery), imports card media, and builds timelines inside the <code>Projects</code> bin.</li>
-                    <li><strong>Smart Versioning:</strong> Automatically versions projects (e.g. <code>ProjectName_v2</code>, <code>_v3</code>) if a project with the same name already exists in Resolve.</li>
-                  </ul>
+                  <h3 className="text-brand-primary font-semibold mb-3 flex items-center gap-2"><FolderPlus size={16}/> Master Ingest & Folder Template Reference</h3>
+                  <div className="text-sm text-white/70 space-y-3">
+                    <p><strong>1. Master Folder Setup:</strong> Creates date-prefixed folders (<code>YYYY-MM-DD_[Client]_[Project]</code>) on disk with standard sub-folder templates.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs bg-black/40 p-4 rounded-xl border border-white/5 leading-relaxed font-mono">
+                      <div>
+                        <span className="text-brand-primary font-bold block mb-1">Standard Video & Film</span>
+                        • Raw Footages/Card 01<br/>
+                        • Raw Footages/Card 02<br/>
+                        • Davinci Resolve Database<br/>
+                        • Logos & Branding<br/>
+                        • BG Music<br/>
+                        • After Effects / Photoshop<br/>
+                        • Exports & Documents
+                      </div>
+                      <div>
+                        <span className="text-cyan-400 font-bold block mb-1">Social Media & Reels</span>
+                        • Raw Footages/Card 01<br/>
+                        • Davinci Resolve Database<br/>
+                        • Logos & Branding<br/>
+                        • Audio & Music<br/>
+                        • Graphics & Assets<br/>
+                        • Exports
+                      </div>
+                      <div>
+                        <span className="text-emerald-400 font-bold block mb-1">Commercial / Corporate</span>
+                        • Raw Footages/Camera A & B<br/>
+                        • Davinci Resolve Database<br/>
+                        • Logos & Branding<br/>
+                        • Audio & Voiceover<br/>
+                        • Motion Graphics<br/>
+                        • Client Approvals & Exports
+                      </div>
+                    </div>
+                    <p><strong>2. Auto Ingest Workflow:</strong> Launches DaVinci Resolve, connects to the Project Library inside <code>Davinci Resolve Database</code>, creates a versioned project, configures working folders (Project Media Location, CacheClip, .gallery), imports camera footage into Media Pool Bins, and builds individual Card Timelines inside the <code>Projects</code> bin.</p>
+                  </div>
                 </div>
 
                 <div className="bg-black/20 border border-white/5 rounded-2xl p-6">
