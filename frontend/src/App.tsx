@@ -509,12 +509,12 @@ export default function App() {
                 id="master_ingest"
                 isFavorite={favorites.includes('master_ingest')}
                 onToggleFavorite={() => toggleFavorite("master_ingest")} 
-                description="Connect to DaVinci Resolve, create/select project library, set working folders, import card footage, and build timelines."
+                description="Automate project creation, working folder paths, Media Pool bins, and card timelines in DaVinci Resolve."
                 className="ring-1 ring-brand-primary/30 shadow-xl shadow-brand-primary/20"
                 title="Auto Ingest" 
                 icon={<FolderPlus size={18} />} 
                 category="organize"
-                helpText="Launches DaVinci Resolve, connects to the project library inside your Master Folder, creates a versioned project, configures working folders, builds Media Pool bins, and generates card timelines."
+                helpText="Open DaVinci Resolve with your desired Project Library active. Clip Assassin will create a versioned project, configure working folders to your Master Folder, build Media Pool card bins, import footage, and generate timelines."
               >
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col md:flex-row gap-3 items-end">
@@ -544,11 +544,11 @@ export default function App() {
                   </div>
                   <div className="p-4 bg-black/40 rounded-xl border border-white/5 text-xs text-white/60 space-y-2 leading-relaxed">
                     <p className="font-semibold text-white/80">✨ How Auto Ingest Works with DaVinci Resolve:</p>
-                    <p>• Automatically launches or connects to DaVinci Resolve.</p>
-                    <p>• Selects/switches to the Project Library inside <code className="text-brand-primary">Davinci Resolve Database</code> (if present).</p>
+                    <p>• Connects to your active DaVinci Resolve session (open Resolve with your Project Library selected).</p>
                     <p>• Creates a versioned project named after the Master Folder (e.g. <code className="text-brand-primary">ProjectName_v2</code>).</p>
-                    <p>• Automatically configures <code className="text-brand-primary">Project media location</code>, <code className="text-brand-primary">CacheClip</code>, and <code className="text-brand-primary">.gallery</code> to your Master Folder.</p>
-                    <p>• Imports camera card footage into Media Pool Bins and generates individual Card Timelines inside the <code className="text-brand-primary">Projects</code> Bin.</p>
+                    <p>• Automatically configures <code className="text-brand-primary">Project media location</code>, <code className="text-brand-primary">CacheClip</code>, and <code className="text-brand-primary">.gallery</code> working folders to your Master Folder.</p>
+                    <p>• Imports camera card footage into Media Pool Bins mirroring card sub-folders.</p>
+                    <p>• Generates individual Card Timelines inside the <code className="text-brand-primary">Projects</code> Bin automatically.</p>
                   </div>
                 </div>
               </FeatureCard>
@@ -1493,7 +1493,7 @@ export default function App() {
                         • Client Approvals & Exports
                       </div>
                     </div>
-                    <p><strong>2. Auto Ingest Workflow:</strong> Launches DaVinci Resolve, connects to the Project Library inside <code>Davinci Resolve Database</code>, creates a versioned project, configures working folders (Project Media Location, CacheClip, .gallery), imports camera footage into Media Pool Bins, and builds individual Card Timelines inside the <code>Projects</code> bin.</p>
+                    <p><strong>2. Auto Ingest Workflow:</strong> Connects to your active DaVinci Resolve session (after you manually open Resolve and select your Project Library), creates a versioned project named after your Master Folder, configures working folder locations (Project Media Location, CacheClip, .gallery), imports camera footage into Media Pool Bins, and builds individual Card Timelines inside the <code>Projects</code> bin.</p>
                   </div>
                 </div>
 
