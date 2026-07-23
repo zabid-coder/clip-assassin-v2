@@ -33,7 +33,7 @@ def main():
     )
 
     # 3. Start Native Webview Loop
-    webview.start(private_mode=False)
+    webview.start(private_mode=True)
 
 if __name__ == "__main__":
     main()

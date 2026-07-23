@@ -367,10 +367,11 @@ if os.path.isdir(frontend_dist):
     def serve_frontend(catchall: str):
         # Serve static files if they exist (e.g., /logo.jpg, /favicon.ico)
         file_path = os.path.join(frontend_dist, catchall)
+        no_cache_headers = {"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"}
         if os.path.isfile(file_path):
-            return FileResponse(file_path)
+            return FileResponse(file_path, headers=no_cache_headers)
         # Fallback to index.html for client-side routing
-        return FileResponse(os.path.join(frontend_dist, "index.html"))
+        return FileResponse(os.path.join(frontend_dist, "index.html"), headers=no_cache_headers)
 else:
     print(f"Warning: Frontend build directory not found at {frontend_dist}. Please run 'npm run build' in the frontend folder.")
 
