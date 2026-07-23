@@ -33,6 +33,9 @@ def build_app():
 
     # 3. Construct PyInstaller Command
     sep = ";" if sys.platform == "win32" else ":"
+    extra_flags = []
+    if sys.platform == "darwin":
+        extra_flags = ["--osx-bundle-identifier=com.zabidstudio.clipassassin"]
     
     pyinstaller_cmd = [
         sys.executable, "-m", "PyInstaller",
@@ -46,7 +49,7 @@ def build_app():
         "--collect-all=pywebview",
         "--collect-all=uvicorn",
         "--collect-all=fastapi",
-    ] + icon_arg + ["desktop_app.py"]
+    ] + icon_arg + extra_flags + ["desktop_app.py"]
 
     # 4. Run PyInstaller
     print("\n⚙️ Step 2: Compiling Native Desktop Binary with PyInstaller...")
@@ -54,6 +57,17 @@ def build_app():
     if res.returncode != 0:
         print("❌ PyInstaller build failed!")
         sys.exit(1)
+
+    # 5. macOS Post-Processing (Clear Quarantine, Ad-hoc Codesign, Refresh Finder)
+    if sys.platform == "darwin":
+        app_path = os.path.join(base_dir, 'dist', 'Clip Assassin.app')
+        print("\n🔏 Step 3: macOS App Signing & Finder Optimization...")
+        subprocess.run(["xattr", "-cr", app_path], check=False)
+        subprocess.run(["codesign", "--force", "--deep", "--sign", "-", app_path], check=False)
+        subprocess.run(["touch", app_path], check=False)
+        ls_path = "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+        if os.path.exists(ls_path):
+            subprocess.run([ls_path, "-f", app_path], check=False)
 
     print("\n==================================================")
     if sys.platform == "darwin":
