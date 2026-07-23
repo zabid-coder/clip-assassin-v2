@@ -431,21 +431,21 @@ export default function App() {
             </div>
           )}
           
-          {/* --- TAB: MASTER INGEST & FOLDER SETUP --- */}
+          {/* --- TAB: MASTER INGEST --- */}
           {(activeTab === 'master_ingest' || activeTab === 'dashboard') && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6 mb-6">
               
-              {/* Card 1: Post Haste Style Disk Template Creator */}
+              {/* Card 1: Disk Template Creator */}
               <FeatureCard hidden={activeTab === 'dashboard' && !favorites.includes('create_master_folder')} 
                 id="create_master_folder"
                 isFavorite={favorites.includes('create_master_folder')}
                 onToggleFavorite={() => toggleFavorite("create_master_folder")} 
-                description="Generate a standardized Master Folder structure on disk with custom parameters (Post Haste Style)."
+                description="Generate a standardized project directory hierarchy on disk with customizable presets."
                 className="ring-1 ring-brand-primary/30 shadow-xl shadow-brand-primary/20"
-                title="1-Click Master Folder Template Generator (Post Haste Style)" 
+                title="Folder Template Creator" 
                 icon={<FolderTree size={18} />} 
                 category="magic"
-                helpText="Specify your parent directory, project name, client name, and folder preset. Clip Assassin will automatically create the complete standardized directory hierarchy on disk (Raw Footages, Davinci Database, BG Music, AE/PS, Exports)."
+                helpText="Creates a clean folder structure (Raw Footages, DaVinci Database, Audio, Graphics, Exports) on disk with automatic date and client prefixing."
               >
                 <div className="flex flex-col gap-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -482,7 +482,7 @@ export default function App() {
                   <div className="flex justify-end">
                     <div className="w-full md:w-1/3">
                       <ActionButton 
-                        text="⚡ Create Master Folder Structure" 
+                        text="Create Folder Template" 
                         category="magic" variant="primary"
                         isLoading={loading['create_master_folder']}
                         onClick={handleCreateMasterFolder}
@@ -492,17 +492,17 @@ export default function App() {
                 </div>
               </FeatureCard>
 
-              {/* Card 2: DaVinci Resolve Auto Ingest & Project Setup */}
+              {/* Card 2: DaVinci Auto Ingest */}
               <FeatureCard hidden={activeTab === 'dashboard' && !favorites.includes('master_ingest')} 
                 id="master_ingest"
                 isFavorite={favorites.includes('master_ingest')}
                 onToggleFavorite={() => toggleFavorite("master_ingest")} 
-                description="Automate project creation, Media Pool bin setup, working folder paths, and Card Timeline generation."
+                description="Automate DaVinci Resolve project setup, Media Pool bins, working folders, and card timelines."
                 className="ring-1 ring-brand-primary/30 shadow-xl shadow-brand-primary/20"
-                title="DaVinci Resolve Auto Ingest & Project Setup" 
+                title="DaVinci Auto Ingest" 
                 icon={<FolderPlus size={18} />} 
                 category="organize"
-                helpText="Select your Master Folder path (auto-filled if created above). Clip Assassin will launch DaVinci Resolve, create a versioned project, configure working folder settings, build Media Pool Bins, import media, and create Card Timelines automatically."
+                helpText="Launches DaVinci Resolve, sets project library, configures working folders to your Master Folder, builds card bins, and generates timelines inside the Projects bin."
               >
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col md:flex-row gap-3 items-end">
@@ -515,7 +515,7 @@ export default function App() {
                     </div>
                     <div className="w-full md:w-1/3">
                       <ActionButton 
-                        text="🎬 Start Master Ingest" 
+                        text="Start Auto Ingest" 
                         category="organize" variant="primary"
                         isLoading={loading['master_ingest']}
                         onClick={() => {
@@ -530,12 +530,12 @@ export default function App() {
                       />
                     </div>
                   </div>
-                  <div className="p-3 bg-black/40 rounded-xl border border-white/5 text-xs text-white/50 space-y-1">
-                    <p className="font-semibold text-white/70">✨ What Master Ingest automates in Resolve:</p>
-                    <p>• Opens DaVinci Resolve automatically if not running.</p>
-                    <p>• Creates a versioned project named after the Master Folder (e.g. <code className="text-brand-primary">ProjectName_v2</code>).</p>
-                    <p>• Automatically configures <code className="text-brand-primary">Project media location</code>, <code className="text-brand-primary">CacheClip</code>, and <code className="text-brand-primary">.gallery</code> to your Master Folder.</p>
-                    <p>• Builds Media Pool Bins mirroring card folders and generates individual Timelines inside the <code className="text-brand-primary">Projects</code> Bin.</p>
+                  <div className="p-3.5 bg-black/40 rounded-xl border border-white/5 text-xs text-white/60 space-y-1.5 leading-relaxed">
+                    <p className="font-semibold text-white/80">✨ Automation Workflow Highlights:</p>
+                    <p>• Automatically launches DaVinci Resolve if not running.</p>
+                    <p>• Creates a versioned project named after the Master Folder (e.g., <code className="text-brand-primary">ProjectName_v2</code>).</p>
+                    <p>• Configures <code className="text-brand-primary">Project media location</code>, <code className="text-brand-primary">CacheClip</code>, and <code className="text-brand-primary">.gallery</code> to your Master Folder.</p>
+                    <p>• Creates Media Pool Bins for card folders and organizes card timelines inside the <code className="text-brand-primary">Projects</code> Bin.</p>
                   </div>
                 </div>
               </FeatureCard>
@@ -1449,11 +1449,9 @@ export default function App() {
                 <div className="bg-black/20 border border-white/5 rounded-2xl p-6">
                   <h3 className="text-brand-primary font-semibold mb-2 flex items-center gap-2"><FolderPlus size={16}/> Master Ingest & Setup</h3>
                   <ul className="text-sm text-white/70 space-y-2 list-disc pl-5">
-                    <li><strong>Auto Resolve Launch:</strong> Automatically launches DaVinci Resolve on your PC/Mac if it isn't running yet.</li>
-                    <li><strong>Smart Project Creation:</strong> Creates a new DaVinci Resolve project named after your Master Folder (auto-versions to <code>_v2</code> if a project already exists).</li>
-                    <li><strong>Automated Bin Hierarchy:</strong> Scans your Master Folder's <code>Raw Footages</code> directory and creates matching Bins for each camera card (<code>Card 01</code>, <code>Card 02</code>).</li>
-                    <li><strong>Card Timelines in Projects Bin:</strong> Generates individual timelines for each card (e.g., <code>Card 01 Timeline</code>) and organizes them inside a clean <code>Projects</code> Bin.</li>
-                    <li><strong>Automatic Working Folders:</strong> Automatically sets Resolve's <code>Project media location</code>, <code>CacheClip</code>, and <code>.gallery</code> paths directly to your Master Folder.</li>
+                    <li><strong>Folder Template Creator:</strong> Generates standardized project folder structures (Raw Footages, DaVinci Database, Audio, Exports) on disk with automatic date and client prefixing.</li>
+                    <li><strong>DaVinci Auto Ingest:</strong> Automatically launches DaVinci Resolve, sets up project libraries, configures working folders (Project Media Location, CacheClip, .gallery), builds card bins, and generates card timelines inside the Projects bin.</li>
+                    <li><strong>Smart Versioning:</strong> Automatically versions projects (e.g. <code>ProjectName_v2</code>, <code>_v3</code>) if a project with the same name already exists in Resolve.</li>
                   </ul>
                 </div>
 

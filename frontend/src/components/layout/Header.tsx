@@ -20,8 +20,9 @@ export const Header: React.FC<HeaderProps> = ({
 
   const tabNames: Record<string, string> = {
     dashboard: 'Dashboard',
-    magic: 'Magic Tools',
+    master_ingest: 'Master Ingest',
     cut: 'Cut & Trim',
+    magic: 'Magic Tools',
     process: 'Process',
     export: 'Export',
     templates: 'Templates',
@@ -104,7 +105,8 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Active Tab Name (Middle) */}
-      <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none hidden md:block text-xs font-semibold text-white/40 tracking-widest uppercase">
+      <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none hidden md:flex items-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 px-4 py-1.5 rounded-full text-xs font-bold text-white/80 tracking-[0.2em] uppercase shadow-lg">
+        <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse"></span>
         {activeTabName}
       </div>
 

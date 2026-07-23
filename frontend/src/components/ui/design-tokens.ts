@@ -71,28 +71,33 @@ export const CATEGORY_COLORS: Record<CategoryKey, { name: string; solid: string;
 };
 
 // -----------------------------------------------------------------------
-// 2. BUTTON VARIANTS
+// 2. UNIFIED PRO BUTTON VARIANTS
 // -----------------------------------------------------------------------
 export const BUTTON_VARIANTS = {
-  primary: (categoryKey: CategoryKey) => {
-    const c = CATEGORY_COLORS[categoryKey];
+  primary: (categoryKey: CategoryKey = 'magic') => {
+    // Standardized minimal brand execution fill
+    const isDestructive = categoryKey === 'destructive';
+    const bg = isDestructive ? '#F43F5E' : '#A855F7';
+    const glow = isDestructive ? 'rgba(244, 63, 94, 0.3)' : 'rgba(168, 85, 247, 0.3)';
     return {
-      className: 'font-semibold rounded-xl px-6 py-3 transition-all duration-150 hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-2',
+      className: 'font-semibold rounded-xl px-5 py-2.5 text-xs transition-all duration-200 hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg cursor-pointer',
       style: {
-        backgroundColor: c.solid,
-        boxShadow: `0 0 24px ${c.glow}`,
-        color: '#0A0F0D', // dark text on bright fill for contrast
+        backgroundColor: bg,
+        boxShadow: `0 0 20px ${glow}`,
+        color: '#FFFFFF',
       },
     };
   },
 
   secondary: {
-    className: 'font-semibold rounded-xl px-6 py-3 transition-all duration-150 hover:brightness-125 active:scale-[0.98] border border-white/10 flex items-center justify-center gap-2',
-    style: {
-      backgroundColor: '#334155', // slate-700, flat, no glow
-      color: '#E2E8F0',
-    },
+    className: 'font-semibold rounded-xl px-5 py-2.5 text-xs transition-all duration-200 bg-white/10 hover:bg-white/15 active:scale-[0.98] border border-white/10 text-white/90 flex items-center justify-center gap-2 cursor-pointer',
+    style: {},
   },
+  
+  destructive: {
+    className: 'font-semibold rounded-xl px-5 py-2.5 text-xs transition-all duration-200 bg-rose-500/90 hover:bg-rose-500 active:scale-[0.98] text-white flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-rose-500/20',
+    style: {},
+  }
 };
 
 // -----------------------------------------------------------------------
