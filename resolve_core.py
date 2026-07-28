@@ -62,6 +62,19 @@ class ResolveConnection:
             return False
         return False
 
+    def is_fuscript_running(self):
+        try:
+            import subprocess
+            if sys.platform == "darwin":
+                output = subprocess.check_output(["pgrep", "-i", "fuscript"]).decode()
+                return len(output.strip()) > 0
+            elif sys.platform == "win32":
+                output = subprocess.check_output(["tasklist"], creationflags=0x08000000).decode()
+                return "fuscript.exe" in output
+        except Exception:
+            return False
+        return False
+
     def connect(self):
         """
         Establish connection to DaVinci Resolve
@@ -79,10 +92,12 @@ class ResolveConnection:
             # Get Resolve instance
             self.resolve = dvr.scriptapp("Resolve")
             if not self.resolve:
-                if self.is_resolve_process_running():
-                    return False, "DaVinci Resolve is open, but External Scripting is disabled in Resolve Preferences.\n\n👉 Enable Scripting (Required Once):\n1. In DaVinci Resolve, press Cmd + , (or Ctrl + ,) to open Preferences.\n2. Click System > General.\n3. Change 'External scripting using' to 'Local'.\n4. Click Save, close any open modal dialogs, and restart DaVinci Resolve."
-                else:
+                if not self.is_resolve_process_running():
                     return False, "DaVinci Resolve is not open. Please launch DaVinci Resolve first."
+                elif not self.is_fuscript_running():
+                    return False, "DaVinci Resolve is open, but its Scripting Server (fuscript) is not running.\n\n👉 Easy 1-Step Fix:\n1. Quit DaVinci Resolve completely (Cmd + Q).\n2. Re-open DaVinci Resolve.\n3. Open any Project and click Connect again."
+                else:
+                    return False, "DaVinci Resolve Scripting Server is active, but access is blocked by an open dialog window inside Resolve.\n\n👉 Quick Fix:\n1. Close any open dialogs/modal windows (Preferences, About, Project Settings) inside Resolve.\n2. Click Connect again."
 
             # Get project manager
             self.project_manager = self.resolve.GetProjectManager()
