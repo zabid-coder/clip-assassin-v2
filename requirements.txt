@@ -1,7 +1,15 @@
 # Clip Assassin v2.0.1 - Python Dependencies
 
+# Core web stack
 fastapi>=0.110.0
 uvicorn>=0.28.0
 pydantic>=2.6.0
 pywebview>=5.0.0
 pyinstaller>=6.5.0
+
+# Silence detection (audio_tools.py)
+pydub>=0.25.1
+
+# Word document shotlist export (export_tools.py)
+docxtpl>=0.16.7
+python-docx>=1.1.0

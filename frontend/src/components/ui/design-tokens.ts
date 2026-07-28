@@ -18,8 +18,8 @@ export const CATEGORY_COLORS: Record<CategoryKey, { name: string; solid: string;
   // Purple — AI / Magic / generative tools
   magic: {
     name: 'Magic',
-    solid: '#8B5CF6',
-    glow: 'rgba(139, 92, 246, 0.4)',
+    solid: '#A855F7',
+    glow: 'rgba(168, 85, 247, 0.4)',
     text: '#C4B5FD',
     examples: ['Timeline Snapshot', 'Batch Clip Renamer', 'Quick Title', 'Quick Adjustment Layer'],
   },

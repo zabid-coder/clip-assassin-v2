@@ -1,52 +1,84 @@
 from time_parser import parse_timecodes
 
+
+def _seconds_to_frames(seconds, fps):
+    return int(round(seconds * fps))
+
+
 def cut_video(core, timecodes_text, reverse_mode=False, target_clip_name=""):
+    """
+    Cut clips within (or outside, in reverse mode) the specified timecode ranges.
+
+    Args:
+        core: ResolveConnection instance
+        timecodes_text: Multi-line string of "start-end" ranges
+        reverse_mode: If True, keep only clips inside the ranges (delete outside)
+        target_clip_name: Optional substring filter to limit cuts to matching clips
+    """
     try:
         timeline = core.project.GetCurrentTimeline()
-        if not timeline: return False, "No active timeline found."
-        
+        if not timeline:
+            return False, "No active timeline found."
+
         fps_str = timeline.GetSetting("timelineFrameRate") or "30"
         fps = float(fps_str)
-        
-        start_tc = timeline.GetStartTimecode()
-        
-        parsed_ranges = parse_timecodes(timecodes_text, fps)
+
+        parsed_ranges, parse_errors = parse_timecodes(timecodes_text, fps)
         if not parsed_ranges:
-            return False, "Could not parse any valid timecodes."
-            
+            msg = "Could not parse any valid timecodes."
+            if parse_errors:
+                msg += " Errors: " + "; ".join(parse_errors)
+            return False, msg
+
         items = timeline.GetItemListInTrack("video", 1)
         if not items:
             return False, "No clips found on Video Track 1."
-            
+
         if target_clip_name:
             items = [i for i in items if target_clip_name.lower() in i.GetName().lower()]
             if not items:
                 return False, f"No clip found matching '{target_clip_name}'"
-                
+
+        # Convert range seconds to timeline-relative frames using the timeline's start offset
+        timeline_start = int(timeline.GetStartFrame())
+        frame_ranges = [
+            (
+                timeline_start + _seconds_to_frames(r_start, fps),
+                timeline_start + _seconds_to_frames(r_end, fps),
+            )
+            for (r_start, r_end) in parsed_ranges
+        ]
+
         clips_to_delete = []
-        
+
         for item in items:
             clip_start = item.GetStart()
             clip_end = item.GetEnd()
-            
-            for (r_start, r_end) in parsed_ranges:
-                if reverse_mode:
-                    if r_start > clip_start and r_start < clip_end:
-                        pass
-                else:
-                    if clip_start >= r_start and clip_end <= r_end:
-                        clips_to_delete.append(item)
-                        break
-                        
-        if not reverse_mode:
-            if not clips_to_delete:
-                return False, "No clips found within the specified ranges to cut."
-            
-            timeline.DeleteClips(clips_to_delete, True)
-            return True, f"Cut inside: Deleted {len(clips_to_delete)} clips and rippled gaps."
-        else:
-            return False, "Reverse cutting (keeping only ranges) requires advanced API manipulation not yet fully implemented."
-            
+
+            inside_any_range = False
+            for (r_start, r_end) in frame_ranges:
+                # A clip is "inside a range" when it fully sits within [r_start, r_end)
+                if clip_start >= r_start and clip_end <= r_end:
+                    inside_any_range = True
+                    break
+
+            if reverse_mode:
+                # Reverse: keep clips INSIDE ranges, delete everything else
+                if not inside_any_range:
+                    clips_to_delete.append(item)
+            else:
+                # Normal: delete clips inside ranges
+                if inside_any_range:
+                    clips_to_delete.append(item)
+
+        if not clips_to_delete:
+            hint = "outside" if reverse_mode else "inside"
+            return False, f"No clips found {hint} the specified ranges to cut."
+
+        timeline.DeleteClips(clips_to_delete, True)
+        mode_str = "outside" if reverse_mode else "inside"
+        return True, f"Cut {mode_str}: Deleted {len(clips_to_delete)} clips and rippled gaps."
+
     except Exception as e:
         return False, f"Error: {str(e)}"
 
@@ -69,7 +101,7 @@ def pick_clips_from_timeline(core, names_text):
                         start_str, end_str = term.split('-')
                         start_num = int(start_str)
                         end_num = int(end_str)
-                        
+
                         import re
                         nums = re.findall(r'\d+', name)
                         if nums:
@@ -77,7 +109,7 @@ def pick_clips_from_timeline(core, names_text):
                             if start_num <= clip_num <= end_num:
                                 matched_clips.append(item)
                                 break
-                    except:
+                    except (ValueError, IndexError):
                         pass
                 else:
                     if term in name:

@@ -1,25 +1,38 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional
+import logging
 import os
 import sys
-from fastapi.staticfiles import StaticFiles
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from typing import List, Optional
 
 # Ensure resolve_core is accessible
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from resolve_core import ResolveConnection
 import db
 
-app = FastAPI(title="Clip Assassin API")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("clip_assassin")
 
-# Enable CORS for the React frontend
+app = FastAPI(title="Clip Assassin API", version="2.0.1")
+
+# CORS: only the local dev vite server and the packaged desktop app origin
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all for local dev (e.g. http://localhost:5173)
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -237,38 +250,70 @@ def get_settings():
     return {"success": True, "settings": db.get_all_settings()}
 
 import subprocess
+import platform
 
 @app.get("/api/browse")
 def browse_path(type: str = "file"):
+    """Open a native file/folder picker dialog and return the selected path."""
     try:
-        script = ""
-        if type == "folder":
-            script = 'POSIX path of (choose folder with prompt "Select Folder")'
-        elif type == "save":
-            script = 'POSIX path of (choose file name with prompt "Save As...")'
-        else:
-            script = 'POSIX path of (choose file with prompt "Select File")'
-            
-        result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True)
-        if result.returncode == 0:
-            return {"success": True, "path": result.stdout.strip()}
-        else:
+        if platform.system() == "Darwin":
+            if type == "folder":
+                script = 'POSIX path of (choose folder with prompt "Select Folder")'
+            elif type == "save":
+                script = 'POSIX path of (choose file name with prompt "Save As...")'
+            else:
+                script = 'POSIX path of (choose file with prompt "Select File")'
+            result = subprocess.run(['osascript', '-e', script], capture_output=True, text=True)
+            if result.returncode == 0:
+                return {"success": True, "path": result.stdout.strip()}
             return {"success": False, "error": "Cancelled"}
+
+        elif platform.system() == "Windows":
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            root.withdraw()
+            if type == "folder":
+                path = filedialog.askdirectory(title="Select Folder")
+            elif type == "save":
+                path = filedialog.asksaveasfilename(title="Save As...")
+            else:
+                path = filedialog.askopenfilename(title="Select File")
+            root.destroy()
+            if path:
+                return {"success": True, "path": path}
+            return {"success": False, "error": "Cancelled"}
+
+        else:
+            return {"success": False, "error": f"File dialog not supported on {platform.system()}"}
     except Exception as e:
+        logger.error(f"Browse dialog error: {e}")
         return {"success": False, "error": str(e)}
 
 @app.get("/api/open_folder")
 def open_folder(path: str):
-    import os
+    """Open a folder in the system file manager with path validation."""
     try:
-        # Resolve path relative to app root
         full_path = os.path.abspath(path)
-        if os.path.exists(full_path):
-            subprocess.run(['open', full_path])
-            return {"success": True}
-        else:
+
+        # Security: reject path traversal attempts
+        if ".." in path:
+            logger.warning(f"Path traversal attempt blocked: {path}")
+            return {"success": False, "error": "Invalid path"}
+
+        if not os.path.isdir(full_path):
             return {"success": False, "error": "Folder not found"}
+
+        if platform.system() == "Darwin":
+            subprocess.run(['open', full_path])
+        elif platform.system() == "Windows":
+            subprocess.run(['explorer', full_path])
+        else:
+            subprocess.run(['xdg-open', full_path])
+
+        return {"success": True}
     except Exception as e:
+        logger.error(f"Open folder error: {e}")
         return {"success": False, "error": str(e)}
 
 @app.post("/api/settings", response_model=StandardResponse)

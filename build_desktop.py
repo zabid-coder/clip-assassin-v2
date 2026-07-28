@@ -40,7 +40,6 @@ def build_app():
     pyinstaller_cmd = [
         sys.executable, "-m", "PyInstaller",
         "--noconfirm",
-        "--clean",
         "--windowed",
         "--name=Clip Assassin",
         f"--add-data=frontend/dist{sep}frontend/dist",

@@ -49,6 +49,19 @@ class ResolveConnection:
         self.media_pool = None
         self.project_manager = None
 
+    def is_resolve_process_running(self):
+        try:
+            import subprocess
+            if sys.platform == "darwin":
+                output = subprocess.check_output(["pgrep", "-i", "resolve"]).decode()
+                return len(output.strip()) > 0
+            elif sys.platform == "win32":
+                output = subprocess.check_output(["tasklist"], creationflags=0x08000000).decode()
+                return "Resolve.exe" in output
+        except Exception:
+            return False
+        return False
+
     def connect(self):
         """
         Establish connection to DaVinci Resolve
@@ -61,17 +74,20 @@ class ResolveConnection:
             try:
                 import DaVinciResolveScript as dvr
             except ImportError:
-                return False, "DaVinci Resolve Python API not found. Make sure Resolve is installed."
+                return False, "DaVinci Resolve Python API module not found. Please ensure DaVinci Resolve is installed."
 
             # Get Resolve instance
             self.resolve = dvr.scriptapp("Resolve")
             if not self.resolve:
-                return False, "Could not connect to DaVinci Resolve. Please ensure DaVinci Resolve is open, and close any open dialogs/modal windows (like 'Add Project Library' or 'Preferences') inside Resolve."
+                if self.is_resolve_process_running():
+                    return False, "DaVinci Resolve is open, but External Scripting is disabled in Resolve Preferences.\n\n👉 Enable Scripting (Required Once):\n1. In DaVinci Resolve, press Cmd + , (or Ctrl + ,) to open Preferences.\n2. Click System > General.\n3. Change 'External scripting using' to 'Local'.\n4. Click Save, close any open modal dialogs, and restart DaVinci Resolve."
+                else:
+                    return False, "DaVinci Resolve is not open. Please launch DaVinci Resolve first."
 
             # Get project manager
             self.project_manager = self.resolve.GetProjectManager()
             if not self.project_manager:
-                return False, "Could not access Project Manager."
+                return False, "Could not access Project Manager in Resolve. Please close any open dialogs inside Resolve."
 
             # Get current project (if any)
             self.project = self.project_manager.GetCurrentProject()

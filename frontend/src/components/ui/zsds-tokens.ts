@@ -11,7 +11,7 @@
  */
 
 export type AppIdentity = 'clip_assassin' | 'dolaflow_studio' | 'echoflow' | 'future_vfx';
-export type CategoryKey = 'magic' | 'organize' | 'destructive' | 'output' | 'render' | 'neutral';
+export type { CategoryKey } from './design-tokens';
 
 // -----------------------------------------------------------------------
 // 1. APP-SPECIFIC MASTER THEMES
@@ -74,44 +74,5 @@ export const ZSDS_SURFACES = {
   cardHoverTranslate: 'hover:-translate-y-1 hover:shadow-2xl',
 };
 
-// -----------------------------------------------------------------------
-// 3. CATEGORY COLOR SYSTEM
-// -----------------------------------------------------------------------
-export const CATEGORY_COLORS: Record<CategoryKey, { name: string; solid: string; glow: string; text: string }> = {
-  magic: {
-    name: 'Magic',
-    solid: '#A855F7',
-    glow: 'rgba(168, 85, 247, 0.4)',
-    text: '#C4B5FD',
-  },
-  organize: {
-    name: 'Organize',
-    solid: '#10B981',
-    glow: 'rgba(16, 185, 129, 0.4)',
-    text: '#6EE7B7',
-  },
-  destructive: {
-    name: 'Destructive',
-    solid: '#F43F5E',
-    glow: 'rgba(244, 63, 94, 0.4)',
-    text: '#FDA4AF',
-  },
-  output: {
-    name: 'Output',
-    solid: '#06B6D4',
-    glow: 'rgba(6, 182, 212, 0.4)',
-    text: '#67E8F9',
-  },
-  render: {
-    name: 'Render',
-    solid: '#F97316',
-    glow: 'rgba(249, 115, 22, 0.4)',
-    text: '#FDBA74',
-  },
-  neutral: {
-    name: 'Neutral',
-    solid: '#64748B',
-    glow: 'rgba(100, 116, 139, 0.25)',
-    text: '#CBD5E1',
-  },
-};
+// Re-export from design-tokens (single source of truth)
+export { CATEGORY_COLORS } from './design-tokens';

@@ -2,6 +2,9 @@ import os
 import sys
 import time
 import subprocess
+import logging
+
+logger = logging.getLogger("clip_assassin.master_ingest")
 
 SUPPORTED_EXTENSIONS = {
     ".mp4", ".mov", ".mkv", ".m4v", ".avi", ".braw", ".arri",
@@ -149,7 +152,7 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
                 pm.SetCurrentDatabase(db)
                 break
     except Exception as e:
-        print(f"Notice on Database switch: {e}")
+        logger.info(f"Database switch note: {e}")
 
     # 2. Project Creation & Versioning
     existing_projects = pm.GetProjectListInCurrentFolder() or []
@@ -173,7 +176,7 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
         project.SetSetting("perfCacheClipsLocation", cache_dir)
         project.SetSetting("colorGalleryStillsLocation", gallery_dir)
     except Exception as e:
-        print(f"Notice on Working Folders setting: {e}")
+        logger.info(f"Working Folders setting note: {e}")
 
     core.media_pool = project.GetMediaPool()
     media_pool = core.media_pool
