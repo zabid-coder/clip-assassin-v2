@@ -97,6 +97,15 @@ class ResolveConnection:
                 elif not self.is_fuscript_running():
                     return False, "DaVinci Resolve is open, but its Scripting Server (fuscript) is not running.\n\n👉 Easy 1-Step Fix:\n1. Quit DaVinci Resolve completely (Cmd + Q).\n2. Re-open DaVinci Resolve.\n3. Open any Project and click Connect again."
                 else:
+                    # Inspect host interactive state via ScriptServer
+                    try:
+                        server = dvr.scriptapp("")
+                        if server:
+                            host = server.FindHost("Resolve")
+                            if host and host.get("Priorities", {}).get("Interactive", 0.0) == 0.0:
+                                return False, "DaVinci Resolve is open, but no Project is loaded (or a modal dialog is open).\n\n👉 Quick 1-Step Fix:\nDouble-click and open any Project inside DaVinci Resolve so your timeline is visible, then click Connect again."
+                    except Exception:
+                        pass
                     return False, "DaVinci Resolve Scripting Server is active, but access is blocked by an open dialog window inside Resolve.\n\n👉 Quick Fix:\n1. Close any open dialogs/modal windows (Preferences, About, Project Settings) inside Resolve.\n2. Click Connect again."
 
             # Get project manager
