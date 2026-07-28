@@ -20,6 +20,14 @@ def build_app():
         sys.exit(1)
     print("✓ Frontend bundle created successfully in frontend/dist")
 
+    # Clean previous build artifacts
+    build_path = os.path.join(base_dir, "build")
+    dist_path = os.path.join(base_dir, "dist")
+    if os.path.exists(build_path):
+        shutil.rmtree(build_path, ignore_errors=True)
+    if os.path.exists(dist_path):
+        shutil.rmtree(dist_path, ignore_errors=True)
+
     # 2. Select Platform Icon
     icon_arg = []
     if sys.platform == "darwin":
@@ -40,6 +48,7 @@ def build_app():
     pyinstaller_cmd = [
         sys.executable, "-m", "PyInstaller",
         "--noconfirm",
+        "--clean",
         "--windowed",
         "--name=Clip Assassin",
         f"--add-data=frontend/dist{sep}frontend/dist",
