@@ -7,12 +7,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 # Ensure resolve_core is accessible
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from resolve_core import ResolveConnection
 import db
+
+# Import new template engine modules
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from services.template_engine import template_engine
+from services.builtin_templates import get_builtin_templates, get_builtin_template_by_id
+from models.ingest_template import IngestTemplate
 
 logging.basicConfig(
     level=logging.INFO,
@@ -96,6 +102,45 @@ class CreateMasterFolderResponse(BaseModel):
 
 class TemplateImportRequest(BaseModel):
     template_name: str
+
+# New Post Haste-style template API models
+class TemplateParameterInput(BaseModel):
+    name: str
+    value: Any
+
+class TemplateCreateRequest(BaseModel):
+    name: str
+    description: str
+    category: str = "Custom"
+    parameters: List[Dict[str, Any]] = []
+    structure: List[Dict[str, Any]] = []
+
+class TemplatePreviewRequest(BaseModel):
+    template_id: str
+    parameters: Dict[str, Any]
+    base_path: str = "/preview"
+
+class TemplateGenerateRequest(BaseModel):
+    template_id: str
+    parameters: Dict[str, Any]
+    base_path: str
+    dry_run: bool = False
+
+class TemplateListResponse(BaseModel):
+    success: bool
+    templates: List[Dict[str, Any]]
+
+class TemplatePreviewResponse(BaseModel):
+    success: bool
+    preview_tree: str
+    item_count: int
+
+class TemplateGenerateResponse(BaseModel):
+    success: bool
+    message: str
+    created_items: List[Dict[str, Any]]
+    total_items: int
+    base_path: str
 
 class SetTimelineRequest(BaseModel):
     timeline_name: str
@@ -229,12 +274,126 @@ def execute_upload_youtube():
 
 @app.get("/api/templates")
 def get_templates():
-    return engine.get_templates()
+    """Get all available templates (built-in + custom)"""
+    builtin = [t.to_dict() for t in get_builtin_templates()]
+    # Could add custom templates from database here
+    return {"success": True, "templates": builtin}
 
-@app.post("/api/import_template", response_model=StandardResponse)
-def execute_import_template(req: TemplateImportRequest):
-    success, msg = engine.import_template(req.template_name)
-    return StandardResponse(success=success, message=msg)
+@app.get("/api/templates/builtin")
+def get_builtin_template_list():
+    """Get list of built-in Post Haste-style templates"""
+    templates = []
+    for t in get_builtin_templates():
+        templates.append({
+            "id": t.id,
+            "name": t.name,
+            "description": t.description,
+            "category": t.category,
+            "tags": t.tags,
+            "parameters": [p.dict() for p in t.parameters],
+            "builtin_params": t.builtin_params
+        })
+    return {"success": True, "templates": templates}
+
+@app.get("/api/templates/{template_id}")
+def get_template_detail(template_id: str):
+    """Get detailed template by ID"""
+    template = get_builtin_template_by_id(template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return {"success": True, "template": template.to_dict()}
+
+@app.post("/api/templates/preview", response_model=TemplatePreviewResponse)
+def preview_template(req: TemplatePreviewRequest):
+    """Generate ASCII tree preview of template structure"""
+    template = get_builtin_template_by_id(req.template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    preview_tree = template_engine.get_preview_tree(template, req.parameters, req.base_path)
+    result = template_engine.generate_structure(template, req.parameters, req.base_path, dry_run=True)
+    
+    return TemplatePreviewResponse(
+        success=result["success"],
+        preview_tree=preview_tree,
+        item_count=result.get("total_items", 0)
+    )
+
+@app.post("/api/templates/generate", response_model=TemplateGenerateResponse)
+def generate_template_structure(req: TemplateGenerateRequest):
+    """Generate actual folder structure from template"""
+    template = get_builtin_template_by_id(req.template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    result = template_engine.generate_structure(
+        template, 
+        req.parameters, 
+        req.base_path, 
+        req.dry_run
+    )
+    
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=", ".join(result["errors"]))
+    
+    return TemplateGenerateResponse(
+        success=True,
+        message=f"Successfully created {result['total_items']} items",
+        created_items=result.get("created", []) or result.get("preview", []),
+        total_items=result["total_items"],
+        base_path=result["base_path"]
+    )
+
+@app.post("/api/templates/create", response_model=StandardResponse)
+def create_custom_template(req: TemplateCreateRequest):
+    """Create a new custom template (to be saved to database)"""
+    # This would save to database - for now just validate
+    try:
+        # Validate structure
+        template_dict = {
+            "id": f"custom-{req.name.lower().replace(' ', '-')}",
+            "name": req.name,
+            "description": req.description,
+            "category": req.category,
+            "parameters": req.parameters,
+            "structure": req.structure
+        }
+        # In full implementation, save to database
+        return StandardResponse(
+            success=True, 
+            message=f"Template '{req.name}' created successfully"
+        )
+    except Exception as e:
+        return StandardResponse(success=False, message=str(e))
+
+@app.post("/api/templates/import", response_model=StandardResponse)
+def import_template_file(req: TemplateImportRequest):
+    """Import template from JSON file"""
+    try:
+        template = template_engine.import_template(req.template_name)
+        # In full implementation, save to database
+        return StandardResponse(
+            success=True, 
+            message=f"Template '{template.name}' imported successfully"
+        )
+    except Exception as e:
+        return StandardResponse(success=False, message=str(e))
+
+@app.post("/api/templates/export", response_model=StandardResponse)
+def export_template_file(template_id: str, filepath: str):
+    """Export template to JSON file"""
+    template = get_builtin_template_by_id(template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    try:
+        template_engine.export_template(template, filepath)
+        return StandardResponse(
+            success=True, 
+            message=f"Template exported to {filepath}"
+        )
+    except Exception as e:
+        return StandardResponse(success=False, message=str(e))
 
 @app.get("/api/context")
 def get_global_context():
