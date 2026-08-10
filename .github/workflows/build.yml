@@ -1,14 +1,10 @@
-on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
-
 name: Build & Release
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   build-windows:
@@ -27,7 +23,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller
           if (Test-Path requirements.txt) { pip install -r requirements.txt }
-
+      
       - name: Build Frontend (if exists)
         run: |
           if (Test-Path "frontend/package.json") {
@@ -39,8 +35,11 @@ jobs:
 
       - name: Build Executable with PyInstaller
         run: |
-          pyinstaller --onefile --windowed --name="ClipAssassin" --icon=assets/icon.ico desktop_app.py 2>$null
-          if ($LASTEXITCODE -ne 0) {
+          # চেষ্টা করুন আইকন সহ বিল্ড করতে, ব্যর্থ হলে ছাড়া বিল্ড করুন
+          $iconPath = "assets/icon.ico"
+          if (Test-Path $iconPath) {
+            pyinstaller --onefile --windowed --name="ClipAssassin" --icon=$iconPath desktop_app.py
+          } else {
             pyinstaller --onefile --windowed --name="ClipAssassin" desktop_app.py
           }
 
@@ -48,7 +47,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path release
           Copy-Item dist/ClipAssassin.exe release/
-          Copy-Item README.md release/
+          if (Test-Path README.md) { Copy-Item README.md release/ }
           Compress-Archive -Path release/* -DestinationPath ClipAssassin-Windows.zip
 
       - name: Upload Artifact
@@ -58,7 +57,7 @@ jobs:
           path: ClipAssassin-Windows.zip
 
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-latest  # আপডেট করা হয়েছে: macos-latest ব্যবহার করছে
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -85,14 +84,18 @@ jobs:
 
       - name: Build App Bundle with PyInstaller
         run: |
-          pyinstaller --windowed --name="ClipAssassin" --icon=assets/icon.icns desktop_app.py || \
-          pyinstaller --windowed --name="ClipAssassin" desktop_app.py
+          # চেষ্টা করুন আইকন সহ বিল্ড করতে, ব্যর্থ হলে ছাড়া বিল্ড করুন
+          if [ -f "assets/icon.icns" ]; then
+            pyinstaller --windowed --name="ClipAssassin" --icon=assets/icon.icns desktop_app.py
+          else
+            pyinstaller --windowed --name="ClipAssassin" desktop_app.py
+          fi
 
       - name: Prepare Release
         run: |
           mkdir -p release
           cp -r dist/ClipAssassin.app release/
-          cp README.md release/
+          if [ -f README.md ]; then cp README.md release/; fi
           cd release
           zip -r ../ClipAssassin-macOS.zip .
           cd ..
@@ -133,5 +136,21 @@ jobs:
           files: |
             ./artifacts/windows/ClipAssassin-Windows.zip
             ./artifacts/macos/ClipAssassin-macOS.zip
+          body: |
+            ## Clip Assassin ${{ github.ref_name }}
+            
+            ### 📥 Downloads
+            - **Windows**: [Download ZIP](./ClipAssassin-Windows.zip)
+            - **macOS**: [Download ZIP](./ClipAssassin-macOS.zip)
+            
+            ### 🚀 Installation
+            #### Windows
+            1. ডাউনলোড করা `ClipAssassin-Windows.zip` ফাইলটি আনজিপ করুন।
+            2. `ClipAssassin.exe` ফাইলটি রান করুন।
+            
+            #### macOS
+            1. ডাউনলোড করা `ClipAssassin-macOS.zip` ফাইলটি আনজিপ করুন।
+            2. `ClipAssassin.app` ফাইলটি Applications ফোল্ডারে নিন।
+            3. প্রথমবার রান করার সময় Right-click করে Open করুন।
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
