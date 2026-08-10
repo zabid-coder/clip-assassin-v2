@@ -444,12 +444,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ by Zabid Coder**
+## 👨‍💻 Author
+
+**Made with ❤️ by Zabid Al Muttaki**
 
 For questions, suggestions, or collaborations:
-- 📧 Email: [your-email@example.com](mailto:your-email@example.com)
-- 🐦 Twitter: [@yourhandle](https://twitter.com/yourhandle)
-- 💼 LinkedIn: [Your Profile](https://linkedin.com/in/yourprofile)
+
+📧 **Email**: [zabid.coder@gmail.com](mailto:zabid.coder@gmail.com)  
+💼 **LinkedIn**: [linkedin.com/in/zabidalmuttaki](https://www.linkedin.com/in/zabidalmuttaki)
 
 ---
 
