@@ -22,7 +22,7 @@ def main():
 
     # 2. Create Native GUI Window via pywebview
     window = webview.create_window(
-        title="Clip Assassin v2.0.1",
+        title="Clip Assassin v2.0.2",
         url="http://127.0.0.1:8000",
         width=1280,
         height=850,
