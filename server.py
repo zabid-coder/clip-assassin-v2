@@ -436,3 +436,193 @@ if __name__ == "__main__":
     else:
         # In development, use reload
         uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=True)
+
+
+# ==================== TEMPLATE API ENDPOINTS ====================
+
+class TemplateCreateRequest(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    category: str = "Custom"
+    structure: List[Dict[str, Any]]
+    parameters: List[Dict[str, Any]]
+    placeholders: Dict[str, str] = {}
+
+class TemplateUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    structure: Optional[List[Dict[str, Any]]] = None
+    parameters: Optional[List[Dict[str, Any]]] = None
+    placeholders: Optional[Dict[str, str]] = None
+
+class TemplateParamRequest(BaseModel):
+    param_values: Dict[str, Any]
+
+@app.get("/api/templates/builtin")
+def get_builtin_templates_api():
+    """Get all built-in templates"""
+    from modules.master_ingest import get_builtin_templates
+    templates = get_builtin_templates()
+    return {"success": True, "templates": templates}
+
+@app.get("/api/templates")
+def get_all_templates(include_builtin: bool = False):
+    """Get all user-created templates (optionally include built-in)"""
+    templates = template_db.get_all_templates(include_builtin=include_builtin)
+    return {"success": True, "templates": templates}
+
+@app.get("/api/templates/{template_id}")
+def get_template(template_id: int):
+    """Get a single template by ID"""
+    template = template_db.get_template(template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return {"success": True, "template": template}
+
+@app.post("/api/templates", response_model=StandardResponse)
+def create_template(req: TemplateCreateRequest):
+    """Create a new template"""
+    try:
+        template_id = template_db.create_template(
+            name=req.name,
+            description=req.description,
+            category=req.category,
+            structure=req.structure,
+            parameters=req.parameters,
+            placeholders=req.placeholders,
+            is_builtin=0
+        )
+        return StandardResponse(success=True, message=f"Template created with ID {template_id}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/templates/{template_id}", response_model=StandardResponse)
+def update_template(template_id: int, req: TemplateUpdateRequest):
+    """Update an existing template"""
+    success = template_db.update_template(
+        template_id=template_id,
+        name=req.name,
+        description=req.description,
+        category=req.category,
+        structure=req.structure,
+        parameters=req.parameters,
+        placeholders=req.placeholders
+    )
+    if success:
+        return StandardResponse(success=True, message="Template updated")
+    else:
+        raise HTTPException(status_code=400, detail="Failed to update template or template is builtin")
+
+@app.delete("/api/templates/{template_id}", response_model=StandardResponse)
+def delete_template(template_id: int):
+    """Delete a template (cannot delete built-in)"""
+    success = template_db.delete_template(template_id)
+    if success:
+        return StandardResponse(success=True, message="Template deleted")
+    else:
+        raise HTTPException(status_code=400, detail="Failed to delete template or template is builtin")
+
+@app.post("/api/templates/{template_id}/preview")
+def preview_template_structure(template_id: int, req: TemplateParamRequest):
+    """Preview what folder structure will be created without actually creating it"""
+    from modules.master_ingest import resolve_variables
+    
+    template = template_db.get_template(template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    # Merge defaults with provided values
+    all_params = {}
+    for param in template["parameters"]:
+        default = param.get("default", "")
+        if default == "{today}" or default == "{date}":
+            from datetime import datetime
+            default = datetime.now().strftime("%Y-%m-%d")
+        all_params[param["name"]] = default
+    all_params.update(req.param_values)
+    
+    # Generate preview structure (simplified representation)
+    def build_preview(elements, indent=0):
+        preview = []
+        for elem in elements:
+            elem_type = elem.get("type", "folder")
+            name = resolve_variables(elem.get("name", ""), all_params)
+            
+            if elem_type == "folder":
+                preview.append(("📁 " + "  " * indent + name, "folder"))
+                children = elem.get("children", [])
+                preview.extend(build_preview(children, indent + 1))
+            elif elem_type == "file":
+                preview.append(("📄 " + "  " * indent + name, "file"))
+            elif elem_type == "loop":
+                var_name = elem.get("var", "i")
+                start = int(resolve_variables(str(elem.get("start", 1)), all_params))
+                end_str = resolve_variables(str(elem.get("end", 1)), all_params)
+                try:
+                    end = int(end_str)
+                except:
+                    end = start
+                
+                template_elem = elem.get("template", {})
+                for i in range(start, min(end + 1, start + 10)):  # Limit preview to 10 items
+                    loop_params = all_params.copy()
+                    loop_params[var_name] = i
+                    loop_name = resolve_variables(template_elem.get("name", ""), loop_params)
+                    preview.append(("📁 " + "  " * indent + loop_name + " (loop)", "folder"))
+        
+        return preview
+    
+    preview_items = build_preview(template["structure"])
+    return {
+        "success": True,
+        "preview": [{"name": item[0], "type": item[1]} for item in preview_items],
+        "params_used": all_params
+    }
+
+@app.post("/api/ingest/from-template", response_model=CreateMasterFolderResponse)
+def create_folder_from_template(req: TemplateParamRequest):
+    """Create master folder structure from a template"""
+    from modules.master_ingest import create_master_folder_from_template
+    
+    # Get template_id from request (need to add to model)
+    template_id = getattr(req, 'template_id', None)
+    parent_dir = getattr(req, 'parent_dir', None)
+    
+    if not template_id or not parent_dir:
+        raise HTTPException(status_code=400, detail="template_id and parent_dir required")
+    
+    success, msg, folder_path = create_master_folder_from_template(
+        template_id, parent_dir, req.param_values
+    )
+    
+    return CreateMasterFolderResponse(
+        success=success,
+        message=msg,
+        folder_path=folder_path
+    )
+
+# Preset endpoints
+class PresetCreateRequest(BaseModel):
+    name: str
+    template_id: int
+    param_values: Dict[str, Any]
+
+@app.get("/api/presets/template/{template_id}")
+def get_presets_for_template(template_id: int):
+    """Get all presets for a template"""
+    presets = template_db.get_presets_for_template(template_id)
+    return {"success": True, "presets": presets}
+
+@app.post("/api/presets", response_model=StandardResponse)
+def create_preset(req: PresetCreateRequest):
+    """Create a new preset"""
+    preset_id = template_db.create_preset(req.name, req.template_id, req.param_values)
+    return StandardResponse(success=True, message=f"Preset created with ID {preset_id}")
+
+@app.delete("/api/presets/{preset_id}", response_model=StandardResponse)
+def delete_preset(preset_id: int):
+    """Delete a preset"""
+    template_db.delete_preset(preset_id)
+    return StandardResponse(success=True, message="Preset deleted")
+

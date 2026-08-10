@@ -3,8 +3,17 @@ import sys
 import time
 import subprocess
 import logging
+import re
+from datetime import datetime
+from typing import List, Dict, Any, Tuple
 
 logger = logging.getLogger("clip_assassin.master_ingest")
+
+# Import template engine
+try:
+    from modules.template_engine import template_db
+except ImportError:
+    from template_engine import template_db
 
 SUPPORTED_EXTENSIONS = {
     ".mp4", ".mov", ".mkv", ".m4v", ".avi", ".braw", ".arri",
@@ -271,3 +280,252 @@ def process_master_ingest(core, master_folder_path: str) -> tuple[bool, str]:
                 media_pool.ImportMedia(m_files)
     
     return True, f"✓ Successfully created project '{target_project_name}' with {len(created_timelines)} Card Timelines inside Projects Bin: {', '.join(created_timelines)}"
+
+
+def resolve_variables(text: str, params: Dict[str, Any]) -> str:
+    """Replace {variable} placeholders with actual values"""
+    result = text
+    for key, value in params.items():
+        result = result.replace(f"{{{key}}}", str(value))
+    
+    # Handle date shortcuts
+    today = datetime.now()
+    result = result.replace("{today}", today.strftime("%Y-%m-%d"))
+    result = result.replace("{date}", today.strftime("%Y-%m-%d"))
+    result = result.replace("{time}", today.strftime("%H%M%S"))
+    result = result.replace("{year}", str(today.year))
+    result = result.replace("{month}", today.strftime("%m"))
+    result = result.replace("{day}", today.strftime("%d"))
+    
+    return result
+
+
+def create_folder_structure(parent_dir: str, structure: List[Dict], params: Dict[str, Any], 
+                           placeholders: Dict[str, str] = None) -> Tuple[bool, str, str]:
+    """
+    Create folder structure from template definition (Post Haste style)
+    Supports: folders, files, loops, and variable substitution
+    """
+    if not parent_dir or not os.path.exists(parent_dir):
+        return False, f"Invalid parent folder path: '{parent_dir}'", ""
+    
+    try:
+        # Process the structure recursively
+        created_path = _process_structure_element(parent_dir, structure, params, 0)
+        
+        # Create placeholder files
+        if placeholders:
+            for filename, content in placeholders.items():
+                resolved_filename = resolve_variables(filename, params)
+                file_path = os.path.join(created_path, resolved_filename)
+                
+                # Ensure parent directory exists
+                if os.path.dirname(file_path):
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                
+                # Create file with content (resolve variables in content too)
+                resolved_content = resolve_variables(content, params)
+                with open(file_path, 'w') as f:
+                    f.write(resolved_content)
+        
+        return True, f"✓ Template structure created successfully", created_path
+    
+    except Exception as e:
+        logger.error(f"Error creating folder structure: {e}")
+        return False, f"Failed to create structure: {str(e)}", ""
+
+
+def _process_structure_element(parent_path: str, elements: List[Dict], params: Dict[str, Any], depth: int = 0) -> str:
+    """Recursively process structure elements"""
+    created_root = None
+    
+    for element in elements:
+        elem_type = element.get("type", "folder")
+        name = resolve_variables(element.get("name", ""), params)
+        
+        if elem_type == "folder":
+            folder_path = os.path.join(parent_path, name)
+            os.makedirs(folder_path, exist_ok=True)
+            
+            if not created_root:
+                created_root = folder_path
+            
+            # Process children
+            children = element.get("children", [])
+            if children:
+                _process_structure_element(folder_path, children, params, depth + 1)
+        
+        elif elem_type == "file":
+            file_path = os.path.join(parent_path, name)
+            if os.path.dirname(file_path):
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            # Create empty file or with placeholder content
+            if not os.path.exists(file_path):
+                with open(file_path, 'w') as f:
+                    if element.get("placeholder"):
+                        f.write(element.get("content", ""))
+            
+            if not created_root:
+                created_root = parent_path
+        
+        elif elem_type == "loop":
+            # Handle loop constructs (e.g., Camera 1, Camera 2, Camera 3)
+            var_name = element.get("var", "i")
+            start = int(resolve_variables(str(element.get("start", 1)), params))
+            end_str = resolve_variables(str(element.get("end", 1)), params)
+            
+            # Try to parse end as number
+            try:
+                end = int(end_str)
+            except ValueError:
+                end = start  # Default if can't parse
+            
+            step = element.get("step", 1)
+            template = element.get("template", {})
+            
+            for i in range(start, end + 1, step):
+                loop_params = params.copy()
+                loop_params[var_name] = i
+                loop_params[f"{var_name}_padded"] = str(i).zfill(2)
+                
+                # Process template with loop variables
+                _process_structure_element(parent_path, [template], loop_params, depth + 1)
+    
+    return created_root or parent_path
+
+
+def create_master_folder_from_template(template_id: int, parent_dir: str, 
+                                       param_values: Dict[str, Any]) -> Tuple[bool, str, str]:
+    """
+    Create master folder using a template from database
+    Returns (success, message, folder_path)
+    """
+    # Get template from database
+    template = template_db.get_template(template_id)
+    
+    if not template:
+        return False, f"Template ID {template_id} not found", ""
+    
+    # Merge default parameter values with provided values
+    all_params = {}
+    for param in template["parameters"]:
+        default = param.get("default", "")
+        # Handle special defaults
+        if default == "{today}" or default == "{date}":
+            default = datetime.now().strftime("%Y-%m-%d")
+        all_params[param["name"]] = default
+    
+    # Override with provided values
+    all_params.update(param_values)
+    
+    # Validate required parameters
+    for param in template["parameters"]:
+        if param.get("required") and not all_params.get(param["name"]):
+            return False, f"Required parameter '{param['name']}' is missing", ""
+    
+    # Create the structure
+    return create_folder_structure(
+        parent_dir, 
+        template["structure"], 
+        all_params,
+        template.get("placeholders", {})
+    )
+
+
+def get_builtin_templates() -> List[Dict[str, Any]]:
+    """Get list of built-in templates"""
+    return [
+        {
+            "id": "social_media",
+            "name": "Social Media",
+            "description": "Standard social media project structure",
+            "category": "Social",
+            "parameters": [
+                {"name": "project", "type": "text", "required": True, "default": ""},
+                {"name": "client", "type": "text", "required": False, "default": ""},
+                {"name": "date", "type": "date", "required": True, "default": "{today}"},
+                {"name": "platform", "type": "select", "options": ["Instagram", "TikTok", "YouTube", "All"], "default": "All"}
+            ],
+            "structure": [
+                {"type": "folder", "name": "{date}_{client}_{project}", "children": [
+                    {"type": "folder", "name": "Raw Footages", "children": [
+                        {"type": "folder", "name": "Card 01"},
+                        {"type": "folder", "name": "Card 02"}
+                    ]},
+                    {"type": "folder", "name": "Davinci Resolve Database"},
+                    {"type": "folder", "name": "Logos & Branding"},
+                    {"type": "folder", "name": "Audio & Music"},
+                    {"type": "folder", "name": "Graphics & Assets"},
+                    {"type": "folder", "name": "Exports"},
+                    {"type": "file", "name": "shot_list.txt", "placeholder": True, "content": "Scene\tDescription\tDuration\n1\t\t\n2\t\t\n"}
+                ]}
+            ],
+            "placeholders": {
+                "shot_list.txt": "Scene\tDescription\tDuration\n1\t\t\n2\t\t\n"
+            }
+        },
+        {
+            "id": "commercial",
+            "name": "Commercial Production",
+            "description": "Multi-camera commercial project structure",
+            "category": "Commercial",
+            "parameters": [
+                {"name": "project", "type": "text", "required": True, "default": ""},
+                {"name": "client", "type": "text", "required": True, "default": ""},
+                {"name": "date", "type": "date", "required": True, "default": "{today}"},
+                {"name": "camera_count", "type": "number", "required": False, "default": "2", "min": 1, "max": 10}
+            ],
+            "structure": [
+                {"type": "folder", "name": "{date}_{client}_{project}", "children": [
+                    {"type": "folder", "name": "Raw Footages", "children": [
+                        {"type": "loop", "var": "camera", "start": 1, "end": "{camera_count}",
+                         "template": {"type": "folder", "name": "Camera {camera}"}}
+                    ]},
+                    {"type": "folder", "name": "Davinci Resolve Database"},
+                    {"type": "folder", "name": "Logos & Branding"},
+                    {"type": "folder", "name": "Audio Voiceover"},
+                    {"type": "folder", "name": "Motion Graphics"},
+                    {"type": "folder", "name": "Photoshop"},
+                    {"type": "folder", "name": "Client Approvals & Exports"},
+                    {"type": "folder", "name": "Documents"}
+                ]}
+            ],
+            "placeholders": {}
+        },
+        {
+            "id": "film_production",
+            "name": "Film Production",
+            "description": "Full film production workflow structure",
+            "category": "Film",
+            "parameters": [
+                {"name": "project", "type": "text", "required": True, "default": ""},
+                {"name": "director", "type": "text", "required": False, "default": ""},
+                {"name": "date", "type": "date", "required": True, "default": "{today}"},
+                {"name": "card_count", "type": "number", "required": False, "default": "4", "min": 1, "max": 20}
+            ],
+            "structure": [
+                {"type": "folder", "name": "{date}_{project}", "children": [
+                    {"type": "folder", "name": "01_Raw", "children": [
+                        {"type": "loop", "var": "card", "start": 1, "end": "{card_count}",
+                         "template": {"type": "folder", "name": "Card {card_padded}"}}
+                    ]},
+                    {"type": "folder", "name": "02_Davinci"},
+                    {"type": "folder", "name": "03_Audio"},
+                    {"type": "folder", "name": "04_Graphics"},
+                    {"type": "folder", "name": "05_Exports"},
+                    {"type": "folder", "name": "06_Production_Docs", "children": [
+                        {"type": "file", "name": "script.pdf", "placeholder": True},
+                        {"type": "file", "name": "call_sheet.pdf", "placeholder": True},
+                        {"type": "file", "name": "release_forms.pdf", "placeholder": True}
+                    ]}
+                ]}
+            ],
+            "placeholders": {
+                "script.pdf": "",
+                "call_sheet.pdf": "",
+                "release_forms.pdf": ""
+            }
+        }
+    ]
+

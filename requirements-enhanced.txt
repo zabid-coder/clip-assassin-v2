@@ -1,0 +1,41 @@
+# Core Dependencies (existing)
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+
+# Database & Migrations (NEW)
+alembic>=1.13.0
+SQLAlchemy>=2.0.0
+
+# Async Task Queue (NEW - Optional)
+celery[redis]>=5.3.0
+redis>=5.0.0
+
+# AI Integration (NEW - Optional)
+openai>=1.10.0
+openai-whisper>=20231117
+
+# Enhanced Logging (NEW)
+python-json-logger>=2.0.0
+
+# WebSocket Support (NEW)
+websockets>=12.0
+
+# Testing (NEW)
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+httpx>=0.26.0
+
+# Security (NEW)
+python-dotenv>=1.0.0
+cryptography>=42.0.0
+
+# Plugin System Support
+importlib-metadata>=7.0.0
+
+# Performance & Caching (NEW - Optional)
+cachetools>=5.3.0
+
+# Monitoring & Observability (NEW - Optional)
+prometheus-client>=0.19.0
+sentry-sdk[fastapi]>=1.40.0
