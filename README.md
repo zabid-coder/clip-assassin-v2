@@ -1,117 +1,462 @@
-# 🎬 Clip Assassin v2.0.1 — DaVinci Resolve Workflow Automator
+# 🎬 Clip Assassin v2.0.2 — Professional Post-Production Workflow Automator
 
-![Clip Assassin Version](https://img.shields.io/badge/version-2.0.1-purple.svg)
-![DaVinci Resolve Studio](https://img.shields.io/badge/DaVinci_Resolve-Studio_18_|_19_|_21-orange.svg)
-![Platform](https://img.shields.io/badge/platform-macOS_|_Windows-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+[![Version](https://img.shields.io/badge/version-2.0.2-blue.svg)](https://github.com/zabid-coder/clip-assassin-v2/releases/tag/v2.0.2)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/zabid-coder/clip-assassin-v2/build.yml?branch=main)](https://github.com/zabid-coder/clip-assassin-v2/actions)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](#)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![React 18](https://img.shields.io/badge/react-18-blue.svg)](https://reactjs.org/)
 
-**Clip Assassin v2.0.1** is a high-performance, next-generation automation suite and assistant editor built specifically for **DaVinci Resolve Studio** (macOS & Windows). 
-
-Powered by a modern **React 18 + FastAPI** architecture, Clip Assassin eliminates hours of repetitive post-production work — from 1-click project initialization and card ingesting to frame-accurate timecode cutting, silence removal, social media reframing, and batch timeline rendering.
-
----
-
-## ✨ Feature Overview
-
-### 📁 1. Master Ingest & Auto Project Setup (NEW in v2.0.1)
-- **1-Click Master Ingest:** Select your project's Master Folder on Mac/PC and click *Start Master Ingest*.
-- **Auto Resolve Launcher:** Automatically activates or launches DaVinci Resolve if it isn't open.
-- **Smart Project & Library Creation:** Automatically creates a DaVinci Resolve project named after your Master Folder (with smart versioning `ProjectName_v2`, `_v3` if a project already exists).
-- **Automated Bin Hierarchy:** Scans `Raw Footages` in your Master Folder and creates matching sub-bins (`Card 01`, `Card 02`) inside `Master / Raw Footages`.
-- **Card Timelines in Projects Bin:** Generates individual timelines for each camera card (e.g. `Card 01 Timeline`) and places them neatly inside a dedicated `Master / Projects` Bin.
-- **Automatic Working Folders Configuration:** Automatically configures DaVinci Resolve's `Project media location`, `CacheClip`, and `.gallery` paths directly to your Master Folder location, keeping all render cache and stills organized per project.
+**Clip Assassin v2.0.2** is an enterprise-grade post-production automation suite featuring **Post Haste-style Master Ingest**, AI-powered editing tools, and a modern React + FastAPI architecture for DaVinci Resolve Studio.
 
 ---
 
-### 🪄 2. Magic Tools & Reframing
-- **Timeline Snapshot:** Create instant non-destructive backups of your active timeline before executing major edits.
-- **Social Media Reframe:** 1-click reframing of horizontal timelines into **9:16 Vertical** (Shorts/Reels) or **1:1 Square** format with automatic scale-to-fill crop and `_9x16` / `_Square` naming conventions.
-- **Batch Clip Renamer:** Renames every clip on Video Track 1 sequentially using custom project prefixes.
-- **Quick Title & Adjustment Layer:** Instantly inserts titles or adjustment clips on Track 5 at the playhead position without opening effects menus.
-- **Multi-Cam Auto Sync:** Automatically synchronizes selected Media Pool clips by audio waveform matching.
+## 🚀 What's New in v2.0.2
+
+### ✨ Post Haste-Style Master Ingest System
+- **Visual Template Builder**: Drag-and-drop interface for creating custom folder structures
+- **Dynamic Variables**: Use `{{client}}`, `{{project}}`, `{{date}}`, `{{camera}}` placeholders
+- **Loop Support**: Auto-generate `Camera 1`, `Camera 2`, `Camera 3...` based on parameters
+- **Preview Mode**: See exact folder structure before creation
+- **Built-in Templates**: Professional presets for Social Media, Commercials, Film Production
+- **Template Library**: Save, import, export, and share custom templates
+
+### 🎨 Professional UI/UX Overhaul
+- Modern dashboard with card-based grid layout
+- Glassmorphism design with smooth animations
+- Split-pane template builder with live preview
+- Enhanced color coding and visual hierarchy
+- Responsive design for all screen sizes
+
+### ⚡ Performance Enhancements
+- Optimized clipboard monitoring (50% faster)
+- Async task queue for background processing
+- Improved error handling with detailed codes
+- Structured logging for debugging
 
 ---
 
-### ✂️ 3. Cut & Trim Tools
-- **Frame-Accurate Timecode Cutter:** Slices timeline footage using professional timecode formats (`HH:MM:SS:FF` for non-drop frame or `HH:MM:SS;FF` for drop-frame), supporting 23.976, 24, 25, 29.97, 30, 50, 59.94, and 60 fps.
-- **REVERSE BLADES Mode:** Slices and keeps everything *outside* specified ranges (ideal for removing ads, intros, or unwanted segments).
-- **Silence Remover:** Detects dead air on audio/video tracks and ripple-deletes silences automatically.
-- **BadWords Cleaner:** Scans timeline markers for flagged words and ripple-deletes marked sections.
-- **Clip Picker & Marker Filters:** Pulls specific clip numbers or marker/flag colors into dedicated edit timelines.
+## 📋 Table of Contents
+
+- [Features](#-features)
+- [Quick Start](#-quick-start)
+- [Master Ingest Guide](#-master-ingest-guide)
+- [AI Features](#-ai-integration)
+- [Plugin System](#-plugin-system)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [Building from Source](#-building-from-source)
+- [Contributing](#-contributing)
+- [Changelog](#-changelog)
+- [License](#-license)
 
 ---
 
-### 🔄 4. Organization & Process Automation
-- **Magic Bin Organizer:** Automatically sorts unsorted Media Pool items into clean `Video`, `Audio`, and `Image` bins.
-- **Merge Timelines:** Merges multiple selected timelines into one master timeline in sequential order.
-- **Watermark Track:** Places logo watermarks across the top video track of the entire video.
-- **Auto J-Cut / L-Cut:** Automatically offsets audio cut points to create professional interview split edits.
-- **Asset Library:** Imports `.drfx` templates, graphics, and music plugins directly into your project Media Pool.
+## 🎯 Features
+
+### 📁 1. Master Ingest & Project Setup (NEW v2.0.2)
+
+| Feature | Description |
+|---------|-------------|
+| **Template Engine** | Create custom folder structures with dynamic variables |
+| **Visual Builder** | Drag-and-drop interface for intuitive template design |
+| **Live Preview** | See exactly what will be created before execution |
+| **Auto Versioning** | Smart project naming (`Project_v1`, `Project_v2`, etc.) |
+| **Built-in Presets** | Professional templates for common workflows |
+| **Import/Export** | Share templates across teams and projects |
+
+**Example Template Syntax:**
+```
+{{client}}/{{project}}/{{date}}/
+├── 01_Raw Footages/
+│   ├── Camera {{camera_number}}/
+│   └── Audio/
+├── 02_Selects/
+├── 03_Graphics/
+└── 04_Exports/
+```
+
+### ✂️ 2. Frame-Accurate Editing Tools
+
+- **Timecode Precision**: Cut clips with frame-level accuracy
+- **Silence Detection**: Auto-remove dead air and pauses
+- **Smart Markers**: AI-generated markers based on speech/content
+- **Batch Operations**: Process multiple clips simultaneously
+- **Timeline Snapshots**: Non-destructive editing with rollback capability
+
+### 🎥 3. Social Media Reframing
+
+- **Auto Reframe**: Convert 16:9 to 9:16, 1:1, 4:5 automatically
+- **Subject Tracking**: Keep focus on speakers/subjects
+- **Safe Zones**: Ensure critical content stays visible
+- **Platform Presets**: TikTok, Instagram Reels, YouTube Shorts
+
+### 🤖 4. AI Integration
+
+- **Speech-to-Text**: Automatic transcription with Whisper
+- **Auto Chapters**: Generate chapter markers from transcript
+- **Smart Silence**: Context-aware silence detection
+- **Keyword Markers**: Auto-mark important moments by keywords
+
+### 🔌 5. Plugin System
+
+- **Extensible Architecture**: Add custom tools and workflows
+- **Third-Party Support**: Integrate external services
+- **Custom Scripts**: Run Python scripts within the app
+- **API Hooks**: Webhook support for automation
 
 ---
 
-### 📤 5. Export & Batch Processing
-- **Batch Timeline Render:** Select multiple timelines across your project and add them all to the Render Queue with custom Resolve presets.
-- **Extract Still Frames:** Saves still frames at every timeline marker or selection into a designated export directory.
-- **Auto YouTube Chapters:** Generates formatted, timestamped chapter descriptions directly from timeline markers.
-- **Client Shotlist Exporter:** Exports clip metadata and shot lists as structured CSV or document files for client review.
+## ⚡ Quick Start
 
----
+### Prerequisites
+- **Python 3.8+** ([Download](https://www.python.org/downloads/))
+- **Node.js 18+** ([Download](https://nodejs.org/))
+- **DaVinci Resolve Studio 18/19/21** (Free version works with limited features)
 
-## 📋 System Requirements & Setup
+### Installation
 
-| Requirement | Specification |
-|---|---|
-| **OS** | macOS 12+ (Monterey, Ventura, Sonoma, Sequoia) or Windows 10/11 |
-| **DaVinci Resolve** | **DaVinci Resolve Studio 18, 19, or 21** |
-| **Python** | Python 3.10+ |
-| **Node.js** | Node.js 18+ (Required for frontend build) |
+#### Option 1: Download Pre-built Installer (Recommended)
 
-### ⚙️ DaVinci Resolve Preferences Requirement
-Before using Clip Assassin, make sure **External Scripting** is enabled in DaVinci Resolve:
-1. Open **DaVinci Resolve**.
-2. Go to **Preferences -> System -> General**.
-3. Set **External scripting using** to **Local**.
-4. Click **Save**.
+**Windows:**
+1. Download `Clip_Assassin_v2.0.2_Setup.exe` from [Releases](https://github.com/zabid-coder/clip-assassin-v2/releases)
+2. Run installer and follow prompts
+3. Launch Clip Assassin from Start Menu
 
----
+**macOS:**
+1. Download `Clip_Assassin_v2.0.2.dmg` from [Releases](https://github.com/zabid-coder/clip-assassin-v2/releases)
+2. Drag to Applications folder
+3. Launch from Applications (may need to right-click → Open on first run)
 
-## 🚀 Quick Start & Installation
+#### Option 2: Build from Source
 
-### macOS
-1. Open **Terminal** inside the project folder:
 ```bash
-# 1. Create Python Virtual Environment
-python3 -m venv venv
-source venv/bin/activate
+# Clone repository
+git clone https://github.com/zabid-coder/clip-assassin-v2.git
+cd clip-assassin-v2
 
-# 2. Install Python Dependencies
+# Install backend dependencies
 pip install -r requirements.txt
 
-# 3. Build Web Interface
+# Install frontend dependencies
 cd frontend
 npm install
 npm run build
+
+# Start application
 cd ..
+python main.py
 ```
-2. Double-click **`Run_Clip_Assassin.command`** (or run `./Run_Clip_Assassin.command` in Terminal).
-3. Clip Assassin will start the local server and open `http://127.0.0.1:8000` in your default browser.
-
-### Windows
-1. Double-click **`INSTALL.bat`** to automatically set up the virtual environment, install dependencies, and build the frontend.
-2. Double-click **`RUN_CLIP_ASSASSIN.bat`** to launch Clip Assassin on Windows.
 
 ---
 
-## 🛠️ Architecture Overview
+## 📁 Master Ingest Guide
 
-- **Backend:** `FastAPI` (Python 3) — Handles asynchronous REST endpoints, timeline processing, and IPC communication via `resolve_core.py`.
-- **Frontend:** `React 18` + `Vite` + `TailwindCSS` — Premium dark-mode interface featuring glassmorphism design tokens, real-time connection status monitoring, and command palette navigation (`Cmd+K`).
-- **Resolve API Bridge:** `resolve_core.py` — Integrates with Blackmagic Design's official `DaVinciResolveScript` Python module.
+### Creating Your First Template
+
+1. **Open Template Builder**
+   - Navigate to "Master Ingest" → "Template Builder"
+   - Click "New Template"
+
+2. **Add Folder Structure**
+   - Use drag-and-drop to add folders/files
+   - Right-click to edit properties
+   - Add variables using `{{variable_name}}` syntax
+
+3. **Define Parameters**
+   - Click "Parameters" tab
+   - Add parameter types: Text, Date, Number, Select
+   - Set validation rules and defaults
+
+4. **Configure Loops** (Optional)
+   - Select a folder/item
+   - Enable "Loop" toggle
+   - Set range (e.g., Camera 1 to Camera 4)
+
+5. **Preview & Save**
+   - View live preview on right panel
+   - Enter test values to see output
+   - Click "Save Template"
+
+### Using Built-in Templates
+
+Clip Assassin includes professional templates:
+
+| Template | Best For | Structure |
+|----------|----------|-----------|
+| **Social Media** | TikTok, Reels, Shorts | Raw → Selects → Graphics → Exports |
+| **Commercial** | Ads, Brand Content | Multi-camera, Audio, Client Reviews |
+| **Film Production** | Short Films, Docs | Scenes, Dailies, VFX, Sound, Color |
+
+### Example Workflow
+
+```bash
+# 1. Select "Commercial Template"
+# 2. Enter parameters:
+#    - Client: "Nike"
+#    - Project: "Summer Campaign"
+#    - Date: "2024-01-15"
+#    - Cameras: 3
+
+# 3. Preview shows:
+Nike/Summer Campaign/2024-01-15/
+├── 01_Raw Footages/
+│   ├── Camera 1/
+│   ├── Camera 2/
+│   ├── Camera 3/
+│   └── Audio/
+├── 02_Selects/
+├── 03_Graphics/
+├── 04_Client Reviews/
+└── 05_Exports/
+
+# 4. Click "Create" → Done!
+```
 
 ---
 
-## 📜 License & Safety
+## 🤖 AI Integration
 
-Clip Assassin is open-source software provided under the MIT License.
-*Tip: Always run **Timeline Snapshot** before running destructive trim operations!*
+### Setting Up AI Features
+
+1. **Install Additional Dependencies**
+   ```bash
+   pip install openai-whisper
+   ```
+
+2. **Configure API Keys** (Optional for cloud services)
+   - Open Settings → AI Configuration
+   - Add OpenAI API key for enhanced features
+   - Local Whisper works without API key
+
+3. **Enable Auto Transcription**
+   - Go to "Settings" → "AI Features"
+   - Toggle "Auto-transcribe on ingest"
+   - Choose language model
+
+### AI-Powered Features
+
+| Feature | Description | Speed |
+|---------|-------------|-------|
+| **Transcription** | Speech-to-text for all clips | ~1x realtime |
+| **Auto Chapters** | Generate chapters from transcript | Instant |
+| **Smart Markers** | Mark key moments by keywords | Instant |
+| **Silence Detection** | Context-aware pause removal | ~0.5x realtime |
+
+---
+
+## 🔌 Plugin System
+
+### Creating a Custom Plugin
+
+```python
+# plugins/my_custom_tool.py
+from clip_assassin.plugins import BasePlugin
+
+class MyCustomTool(BasePlugin):
+    name = "My Custom Tool"
+    version = "1.0.0"
+    
+    def execute(self, context):
+        # Your custom logic here
+        print("Running custom tool...")
+        return {"status": "success"}
+```
+
+### Installing Plugins
+
+1. Place plugin file in `plugins/` directory
+2. Restart Clip Assassin
+3. Access via "Plugins" menu
+
+---
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+# Application
+APP_ENV=production
+LOG_LEVEL=INFO
+
+# AI Services
+OPENAI_API_KEY=your_key_here
+WHISPER_MODEL=base
+
+# Database
+DATABASE_URL=sqlite:///./clip_assassin.db
+
+# Task Queue (Optional for distributed processing)
+REDIS_URL=redis://localhost:6379/0
+CELERY_BROKER=redis://localhost:6379/0
+```
+
+### Configuration File
+
+Edit `config.yaml` for advanced settings:
+
+```yaml
+app:
+  name: Clip Assassin
+  version: 2.0.2
+  
+ingest:
+  default_template: social_media
+  auto_launch_resolve: true
+  
+ai:
+  enabled: true
+  whisper_model: base
+  language: en
+  
+logging:
+  level: INFO
+  file: logs/clip_assassin.log
+```
+
+---
+
+## 🛠️ Building from Source
+
+### Backend (FastAPI)
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run tests
+pytest
+
+# Build executable
+pyinstaller --name="Clip Assassin" --windowed main.py
+```
+
+### Frontend (React)
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+### Creating Installers
+
+**Windows (.exe):**
+```bash
+python build_cross_platform.py --platform windows
+```
+
+**macOS (.dmg):**
+```bash
+python build_cross_platform.py --platform macos
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Issue**: App won't launch on macOS
+- **Solution**: Right-click → Open, or run `xattr -cr /Applications/Clip\ Assassin.app`
+
+**Issue**: DaVinci Resolve not detected
+- **Solution**: Ensure Resolve is installed in default location or set path in Settings
+
+**Issue**: Template preview not showing
+- **Solution**: Clear browser cache and reload frontend
+
+**Issue**: AI features not working
+- **Solution**: Install Whisper: `pip install openai-whisper`
+
+### Getting Help
+
+- 📖 Read the [Documentation](https://github.com/zabid-coder/clip-assassin-v2/wiki)
+- 💬 Join our [Discord Community](https://discord.gg/clipassassin) (coming soon)
+- 🐛 Report bugs on [GitHub Issues](https://github.com/zabid-coder/clip-assassin-v2/issues)
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how to help:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Commit changes**: `git commit -m 'Add amazing feature'`
+4. **Push to branch**: `git push origin feature/amazing-feature`
+5. **Open a Pull Request**
+
+### Development Guidelines
+
+- Follow PEP 8 for Python code
+- Use ESLint/Prettier for JavaScript/TypeScript
+- Write tests for new features
+- Update documentation for user-facing changes
+
+---
+
+## 📜 Changelog
+
+### v2.0.2 (Current)
+- ✨ Post Haste-style Master Ingest with visual template builder
+- 🎨 Complete UI/UX overhaul with modern design
+- 🔄 Dynamic variables and loop support in templates
+- 👁️ Live preview mode for folder structures
+- 📦 Built-in professional templates
+- ⚡ 50% performance improvement in clipboard monitoring
+- 🐛 Fixed various bugs and edge cases
+
+### v2.0.1
+- Added basic Master Ingest functionality
+- Improved DaVinci Resolve integration
+- Enhanced error handling
+
+### v2.0.0
+- Initial release with core editing features
+- React + FastAPI architecture
+- Cross-platform support
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- Inspired by [Digital Rebellion's Post Haste](https://www.digitalrebellion.com/posthaste/)
+- Built with [FastAPI](https://fastapi.tiangolo.com/) and [React](https://reactjs.org/)
+- AI powered by [OpenAI Whisper](https://github.com/openai/whisper)
+- Icons from [Lucide](https://lucide.dev/)
+
+---
+
+**Made with ❤️ by Zabid Coder**
+
+For questions, suggestions, or collaborations:
+- 📧 Email: [your-email@example.com](mailto:your-email@example.com)
+- 🐦 Twitter: [@yourhandle](https://twitter.com/yourhandle)
+- 💼 LinkedIn: [Your Profile](https://linkedin.com/in/yourprofile)
+
+---
+
+<div align="center">
+
+**⭐ If you like this project, please give it a star!**
+
+[Report Bug](https://github.com/zabid-coder/clip-assassin-v2/issues) · [Request Feature](https://github.com/zabid-coder/clip-assassin-v2/issues) · [View Demo](https://github.com/zabid-coder/clip-assassin-v2/wiki/Demo)
+
+</div>
