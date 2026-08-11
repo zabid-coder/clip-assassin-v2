@@ -1,7 +1,7 @@
 # GitHub Actions CI/CD for Clip Assassin
 # Builds macOS .dmg and Windows .exe installer
 
-name: Build Desktop Apps
+name: Build & Release
 
 on:
   push:
@@ -10,188 +10,173 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-macos:
-    runs-on: macos-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller pywebview
-
-    - name: Install npm dependencies
-      run: |
-        cd frontend
-        npm ci
-
-    - name: Build frontend
-      run: |
-        cd frontend
-        npm run build
-
-    - name: Build macOS app with PyInstaller
-      run: |
-        pyinstaller --noconfirm --clean --windowed \
-          --name="Clip Assassin" \
-          --icon=app_icon.icns \
-          --osx-bundle-identifier=com.zabidstudio.clipassassin \
-          --target-architecture=universal2 \
-          --add-data="frontend/dist:frontend/dist" \
-          --add-data="presets:presets" \
-          --add-data="templates:templates" \
-          --collect-all=pywebview \
-          --collect-all=uvicorn \
-          --collect-all=fastapi \
-          desktop_app.py
-
-    - name: Create DMG
-      run: |
-        # Create DMG contents
-        mkdir dist/dmg_contents
-        cp -r "dist/Clip Assassin.app" dist/dmg_contents/
-        ln -s /Applications dist/dmg_contents/Applications
-        
-        # Create DMG
-        hdiutil create -volname "Clip Assassin" \
-          -srcfolder dist/dmg_contents \
-          -ov -format UDRO dist/temp.dmg
-        
-        # Compress DMG
-        hdiutil convert dist/temp.dmg \
-          -format UDZO -imagekey zlib-level=9 \
-          -o "dist/Clip_Assassin_${{ github.ref_name }}.dmg"
-        
-        rm dist/temp.dmg
-        rm -rf dist/dmg_contents
-
-    - name: Upload macOS DMG
-      uses: actions/upload-artifact@v4
-      with:
-        name: clip-assassin-macos
-        path: dist/Clip_Assassin_*.dmg
-
   build-windows:
     runs-on: windows-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          if (Test-Path requirements.txt) { pip install -r requirements.txt }
+      
+      - name: Build Frontend (if exists)
+        run: |
+          if (Test-Path "frontend/package.json") {
+            cd frontend
+            npm install
+            npm run build
+            cd ..
+          }
 
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller pywebview
+      - name: Verify Icon
+        id: check_icon
+        run: |
+          if (Test-Path "assets/icon.ico") {
+            echo "ICON_FOUND=true" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "ICON_FOUND=false" >> $env:GITHUB_OUTPUT
+            Write-Warning "icon.ico not found in assets/. Building without icon."
+          }
 
-    - name: Install npm dependencies
-      run: |
-        cd frontend
-        npm ci
+      - name: Build Executable with PyInstaller
+        run: |
+          if ($env:ICON_FOUND -eq 'true') {
+            pyinstaller --onefile --windowed --name="ClipAssassin" --icon=assets/icon.ico desktop_app.py
+          } else {
+            pyinstaller --onefile --windowed --name="ClipAssassin" desktop_app.py
+          }
 
-    - name: Build frontend
-      run: |
-        cd frontend
-        npm run build
+      - name: Prepare Release
+        run: |
+          New-Item -ItemType Directory -Force -Path release
+          Copy-Item dist/ClipAssassin.exe release/
+          if (Test-Path README.md) { Copy-Item README.md release/ }
+          Compress-Archive -Path release/* -DestinationPath ClipAssassin-Windows.zip
 
-    - name: Build Windows executable with PyInstaller
-      run: |
-        pyinstaller --noconfirm --clean --windowed `
-          --name="Clip Assassin" `
-          --icon=icon.ico `
-          --add-data="frontend/dist;frontend/dist" `
-          --add-data="presets;presets" `
-          --add-data="templates;templates" `
-          --collect-all=pywebview `
-          --collect-all=uvicorn `
-          --collect-all=fastapi `
-          desktop_app.py
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: ClipAssassin-Windows.zip
 
-    - name: Create Inno Setup Installer
-      run: |
-        # Download and install Inno Setup
-        $issUrl = "https://jrsoftware.org/download/is.exe"
-        Invoke-WebRequest -Uri $issUrl -OutFile is.exe
-        Start-Process is.exe -ArgumentList "/VERYSILENT" -Wait
-        
-        # Compile installer
-        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" clip_assassin_installer.iss
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Upload Windows Installer
-      uses: actions/upload-artifact@v4
-      with:
-        name: clip-assassin-windows
-        path: dist/Clip_Assassin_*_Setup.exe
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-  release:
-    needs: [build-macos, build-windows]
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Build Frontend (if exists)
+        run: |
+          if [ -f "frontend/package.json" ]; then
+            cd frontend
+            npm install
+            npm run build
+            cd ..
+          fi
+
+      - name: Verify Icon
+        id: check_icon
+        run: |
+          if [ -f "assets/icon.icns" ]; then
+            echo "ICON_FOUND=true" >> $GITHUB_OUTPUT
+          else
+            echo "ICON_FOUND=false" >> $GITHUB_OUTPUT
+            echo "::warning::icon.icns not found in assets/. Building without icon."
+          fi
+
+      - name: Build App Bundle with PyInstaller
+        run: |
+          if [ "$ICON_FOUND" = "true" ]; then
+            pyinstaller --windowed --name="ClipAssassin" --icon=assets/icon.icns desktop_app.py
+          else
+            pyinstaller --windowed --name="ClipAssassin" desktop_app.py
+          fi
+
+      - name: Prepare Release
+        run: |
+          mkdir -p release
+          cp -r dist/ClipAssassin.app release/
+          if [ -f README.md ]; then cp README.md release/; fi
+          cd release
+          zip -r ../ClipAssassin-macOS.zip .
+          cd ..
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: ClipAssassin-macOS.zip
+
+  create-release:
+    needs: [build-windows, build-macos]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    
     steps:
-    - name: Download macOS artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: clip-assassin-macos
-        path: ./artifacts/macos
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Download Windows artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: clip-assassin-windows
-        path: ./artifacts/windows
+      - name: Download Windows Build
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: ./artifacts/windows
 
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: |
-          ./artifacts/macos/*.dmg
-          ./artifacts/windows/*.exe
-        body: |
-          ## Clip Assassin ${{ github.ref_name }}
-          
-          ### Downloads
-          - **macOS**: Clip_Assassin_${{ github.ref_name }}.dmg
-          - **Windows**: Clip_Assassin_${{ github.ref_name }}_Setup.exe
-          
-          ### Installation
-          #### macOS
-          1. Download the .dmg file
-          2. Open it and drag Clip Assassin to Applications
-          3. Right-click → Open to bypass Gatekeeper on first launch
-          
-          #### Windows
-          1. Download the setup.exe file
-          2. Run the installer
-          3. Launch from Start Menu or Desktop
-          
-          ### Requirements
-          - DaVinci Resolve 17+ must be installed
-          - macOS 10.15+ or Windows 10+
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download macOS Build
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-build
+          path: ./artifacts/macos
+
+      - name: Create/Update Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          overwrite: true
+          files: |
+            ./artifacts/windows/ClipAssassin-Windows.zip
+            ./artifacts/macos/ClipAssassin-macOS.zip
+          body: |
+            ## Clip Assassin ${{ github.ref_name }}
+            
+            ### 📥 Downloads
+            - **Windows**: [Download ZIP](./ClipAssassin-Windows.zip)
+            - **macOS**: [Download ZIP](./ClipAssassin-macOS.zip)
+            
+            ### 🚀 Installation
+            #### Windows
+            1. Unzip `ClipAssassin-Windows.zip`.
+            2. Run `ClipAssassin.exe`.
+            
+            #### macOS
+            1. Unzip `ClipAssassin-macOS.zip`.
+            2. Drag `ClipAssassin.app` to your Applications folder.
+            3. Right-click and select Open on first launch to bypass Gatekeeper.
+            
+            ### ✨ Features
+            - Post Haste-style Master Ingest
+            - AI Integration Ready
+            - Professional UI/UX
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
