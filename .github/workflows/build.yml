@@ -9,6 +9,10 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# Force Node 24 for all jobs to avoid deprecation warnings
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -36,21 +40,14 @@ jobs:
             cd ..
           }
 
-      - name: Verify Icon
-        id: check_icon
-        run: |
-          if (Test-Path "assets/icon.ico") {
-            echo "ICON_FOUND=true" >> $env:GITHUB_OUTPUT
-          } else {
-            echo "ICON_FOUND=false" >> $env:GITHUB_OUTPUT
-            Write-Warning "icon.ico not found in assets/. Building without icon."
-          }
-
       - name: Build Executable with PyInstaller
         run: |
-          if ($env:ICON_FOUND -eq 'true') {
-            pyinstaller --onefile --windowed --name="ClipAssassin" --icon=assets/icon.ico desktop_app.py
+          $iconPath = "assets/icon.ico"
+          if (Test-Path $iconPath) {
+            Write-Host "Using icon: $iconPath"
+            pyinstaller --onefile --windowed --name="ClipAssassin" --icon=$iconPath desktop_app.py
           } else {
+            Write-Host "Icon not found, building without icon."
             pyinstaller --onefile --windowed --name="ClipAssassin" desktop_app.py
           }
 
@@ -93,21 +90,13 @@ jobs:
             cd ..
           fi
 
-      - name: Verify Icon
-        id: check_icon
-        run: |
-          if [ -f "assets/icon.icns" ]; then
-            echo "ICON_FOUND=true" >> $GITHUB_OUTPUT
-          else
-            echo "ICON_FOUND=false" >> $GITHUB_OUTPUT
-            echo "::warning::icon.icns not found in assets/. Building without icon."
-          fi
-
       - name: Build App Bundle with PyInstaller
         run: |
-          if [ "$ICON_FOUND" = "true" ]; then
+          if [ -f "assets/icon.icns" ]; then
+            echo "Using icon: assets/icon.icns"
             pyinstaller --windowed --name="ClipAssassin" --icon=assets/icon.icns desktop_app.py
           else
+            echo "Icon not found, building without icon."
             pyinstaller --windowed --name="ClipAssassin" desktop_app.py
           fi
 
@@ -145,7 +134,7 @@ jobs:
           name: macos-build
           path: ./artifacts/macos
 
-      - name: Create/Update Release
+      - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v2
         with:
@@ -153,30 +142,24 @@ jobs:
           name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
-          overwrite: true
           files: |
             ./artifacts/windows/ClipAssassin-Windows.zip
             ./artifacts/macos/ClipAssassin-macOS.zip
           body: |
             ## Clip Assassin ${{ github.ref_name }}
             
-            ### 📥 Downloads
+            ### Downloads
             - **Windows**: [Download ZIP](./ClipAssassin-Windows.zip)
             - **macOS**: [Download ZIP](./ClipAssassin-macOS.zip)
             
-            ### 🚀 Installation
+            ### Installation
             #### Windows
             1. Unzip `ClipAssassin-Windows.zip`.
             2. Run `ClipAssassin.exe`.
             
             #### macOS
             1. Unzip `ClipAssassin-macOS.zip`.
-            2. Drag `ClipAssassin.app` to your Applications folder.
-            3. Right-click and select Open on first launch to bypass Gatekeeper.
-            
-            ### ✨ Features
-            - Post Haste-style Master Ingest
-            - AI Integration Ready
-            - Professional UI/UX
+            2. Drag `ClipAssassin.app` to Applications folder.
+            3. Right-click → Open on first launch.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
